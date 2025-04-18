@@ -1,0 +1,30 @@
+package uptime
+
+import (
+	"encoding/json"
+	"log"
+	"os"
+)
+
+type Config struct {
+	DBFile string
+}
+
+var config *Config
+
+func GetConfig() *Config {
+	if config != nil {
+		return config
+	}
+	file, err := os.ReadFile(".config")
+	if err != nil {
+		log.Println("unable to read config file", err)
+		return nil
+	}
+	if err := json.Unmarshal(file, &config); err != nil {
+		log.Println("json", err)
+		return nil
+	}
+	return config
+
+}
