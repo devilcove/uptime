@@ -2,14 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/devilcove/uptime"
-	"go.etcd.io/bbolt"
-	berrors "go.etcd.io/bbolt/errors"
 )
 
 func monitor(m *uptime.Monitor) {
@@ -44,35 +41,17 @@ func updateStatus(m *uptime.Monitor, check uptime.Checker) {
 		return
 	}
 	log.Println("updating status", m.Name, status.Status)
-	config := uptime.GetConfig()
-	success := false
-	//var err error
-	var db *bbolt.DB
-	for range 5 {
-		db, err = uptime.OpenDB(config.DBFile)
-		if err != nil {
-			log.Println("open database", m.Name, err)
-			if errors.Is(err, berrors.ErrTimeout) {
-				time.Sleep(time.Second * 4)
-				continue
-			}
-			break
-		}
-		defer db.Close()
-		if err = uptime.AddKey(db, m.Name, []string{"status"}, bytes); err != nil {
-			log.Println("update database", m.Name, err)
-			break
-		} else {
-			success = true
-			break
-		}
+	db, err := uptime.OpenDB()
+	if err != nil {
+		log.Println("open database", m.Name, err)
+		return
 	}
-	if !success {
+	defer db.Close()
+	if err = uptime.AddKey(db, m.Name, []string{"status"}, bytes); err != nil {
 		log.Println("update database", m.Name, err)
 		return
 	}
 	log.Println("status updated", m.Name, status.Status)
-
 }
 
 func checkHTTP(m *uptime.Monitor) uptime.Status {
