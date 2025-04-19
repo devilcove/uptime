@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -58,4 +59,20 @@ func about(p tview.Primitive) tview.Primitive {
 	width := 0.8 * float64(w)
 	height := len(mainKeys) + 10
 	return dialog(grid, int(width), int(height))
+}
+
+func help(name string, p tview.Primitive, keys []key) tview.Primitive {
+	table := tview.NewTable()
+	for i, key := range keys {
+		table.SetCell(i+1, 0, tview.NewTableCell(key.name).
+			SetAlign(tview.AlignCenter).SetExpansion(1).SetTextColor(tcell.ColorLightBlue))
+		table.SetCell(i+1, 1, tview.NewTableCell(key.help).
+			SetAlign(tview.AlignLeft).SetExpansion(1).SetTextColor(tcell.ColorBlue))
+	}
+	table.SetBorder(true).SetTitle(name).SetTitleAlign(tview.AlignCenter)
+	_, _, w, _ := p.GetRect()
+	width := 0.8 * float64(w)
+	height := len(keys) + 3
+	log.Println("dialog", name, width, height)
+	return dialog(table, int(width), height)
 }

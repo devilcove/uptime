@@ -51,6 +51,10 @@ func updateStatus(m *uptime.Monitor, check uptime.Checker) {
 		log.Println("update database", m.Name, err)
 		return
 	}
+	if err = uptime.AddKey(db, status.Time.Format(time.RFC3339),
+		[]string{"history", m.Name}, bytes); err != nil {
+		log.Println("update history", m.Name, err)
+	}
 	log.Println("status updated", m.Name, status.Status)
 }
 

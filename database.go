@@ -1,6 +1,7 @@
 package uptime
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -78,7 +79,7 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 		return nil
 	}
 	for _, name := range path[1:] {
-		bucket, err = tx.CreateBucket([]byte(name))
+		bucket, err = bucket.CreateBucketIfNotExists([]byte(name))
 		if err != nil {
 			log.Println("create nested bucket", name, err)
 			return nil
@@ -90,7 +91,7 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	bucket := tx.Bucket([]byte(path[0]))
 	for _, name := range path[1:] {
-		bucket.Bucket([]byte(name))
+		bucket = bucket.Bucket([]byte(name))
 	}
 	return bucket
 }
@@ -117,4 +118,41 @@ func GetKeys(db *bbolt.DB, path []string) ([]Status, error) {
 		return nil
 	})
 	return allStatus, err
+}
+
+func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) {
+	stats := []Status{}
+	status := Status{}
+	max := []byte(time.Now().Format(time.RFC3339))
+	min := []byte{}
+	switch frame {
+	case Hour:
+		min = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
+	case Day:
+		min = []byte(time.Now().Add(-time.Hour * 25).Format(time.RFC3339))
+	case Month:
+		min = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
+	case Year:
+		min = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
+	}
+
+	log.Println("get history", path, frame.Name(), string(max), string(min))
+
+	err := db.View(func(tx *bbolt.Tx) error {
+		bucket := getBucket(path, tx)
+		if bucket == nil {
+			return errors.New("invalid path")
+		}
+		c := bucket.Cursor()
+		k, _ := c.Seek(min)
+		log.Println("first key", string(k))
+		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
+			if err := json.Unmarshal(v, &status); err != nil {
+				return err
+			}
+			stats = append(stats, status)
+		}
+		return nil
+	})
+	return stats, err
 }

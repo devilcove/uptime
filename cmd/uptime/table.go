@@ -36,6 +36,8 @@ func newTable() *tview.Table {
 	table.SetSelectedFunc(func(row, column int) {
 		log.Println("row", row, "column", column, "was selected")
 		log.Println(table.GetCell(row, 0).GetReference())
+		history := history(table.GetCell(row, 0).GetReference().(string), uptime.Hour)
+		pager.AddPage("history", history, true, true)
 	})
 	return table
 }

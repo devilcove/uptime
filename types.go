@@ -35,3 +35,25 @@ type Monitor struct {
 	Timeout string
 	//Check   func(*Monitor) status
 }
+
+type TimeFrame int
+
+const (
+	Hour TimeFrame = iota
+	Day
+	Week
+	Month
+	Year
+)
+
+var TimeFrameNames = map[TimeFrame]string{
+	Hour:  "Hour",
+	Day:   "Day",
+	Week:  "Week",
+	Month: "Month",
+	Year:  "Year",
+}
+
+func (t TimeFrame) Name() string {
+	return TimeFrameNames[t]
+}
