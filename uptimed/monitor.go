@@ -23,6 +23,7 @@ func monitor(m *uptime.Monitor) {
 	timer := time.NewTimer(time.Second)
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
+	log.Println("starting monitor", m.Name)
 	for {
 		select {
 		case <-ticker.C:

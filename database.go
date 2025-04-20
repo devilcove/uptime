@@ -97,6 +97,21 @@ func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	return bucket
 }
 
+func getKey(path []string, tx *bbolt.Tx) []byte {
+	bucket := getBucket(path[:len(path)-1], tx)
+	if bucket == nil {
+		return []byte{}
+	}
+	key := bucket.Get([]byte(path[len(path)-1]))
+	return key
+}
+
+func keyExists(path []string, tx *bbolt.Tx) bool {
+	key := getKey(path, tx)
+	return key != nil
+
+}
+
 func AddKey(db *bbolt.DB, name string, path []string, value []byte) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := createBucket(path, tx)
@@ -130,14 +145,17 @@ func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) 
 	case Hour:
 		min = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
 	case Day:
-		min = []byte(time.Now().Add(-time.Hour * 25).Format(time.RFC3339))
+		min = []byte(time.Now().Add(-time.Hour * 24).Format(time.RFC3339))
 	case Month:
 		min = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
 	case Year:
 		min = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
+	case Week:
+		min = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
 	}
 
-	log.Println("get history", path, frame.Name(), string(max), string(min))
+	log.Println("get history", path, frame.Name(),
+		"\nfrom:", string(min), "\nto  :", string(max))
 
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket(path, tx)
@@ -163,14 +181,30 @@ func GetMonitors(db *bbolt.DB) ([]Monitor, error) {
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket([]string{"monitors"}, tx)
-		bucket.ForEach(func(k, v []byte) error {
+		return bucket.ForEach(func(k, v []byte) error {
 			if err := json.Unmarshal(v, &monitor); err != nil {
 				return err
 			}
 			monitors = append(monitors, monitor)
 			return nil
 		})
-		return nil
 	})
 	return monitors, err
+}
+
+func SaveMonitor(db *bbolt.DB, monitor Monitor) error {
+	bytes, err := json.Marshal(monitor)
+	if err != nil {
+		return err
+	}
+	return db.Update(func(tx *bbolt.Tx) error {
+		if keyExists([]string{"monitor", monitor.Name}, tx) {
+			return errors.New("key exists")
+		}
+		bucket := tx.Bucket([]byte("monitors"))
+		if err := bucket.Put([]byte(monitor.Name), bytes); err != nil {
+			return err
+		}
+		return nil
+	})
 }

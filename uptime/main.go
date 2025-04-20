@@ -37,19 +37,20 @@ func main() {
 		log.Fatal("terminal is too small", w, h)
 		os.Exit(1)
 	}
-	header := tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText("Header")
-	footer := tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText("footer")
+	//header := tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText("Header")
+	footer := tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText("? for help; esc to exit")
 	table := newTable()
 	grid := tview.NewGrid().
-		SetRows(1, 0, 1).
-		SetBorders(true).
-		AddItem(header, 0, 0, 1, 1, 0, 0, false).
-		AddItem(table, 1, 0, 1, 1, 0, 0, true).
-		AddItem(footer, 2, 0, 1, 1, 0, 0, false)
+		SetRows(0, 1).
+		//SetBorders(true).
+		//AddItem(header, 0, 0, 1, 1, 0, 0, false).
+		AddItem(table, 0, 0, 1, 1, 0, 0, true).
+		AddItem(footer, 1, 0, 1, 1, 0, 0, false)
 	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		log.Println("grid key handler", event.Name())
 		return event
 	})
+	grid.SetBorder(true).SetTitle("Uptime").SetTitleAlign(tview.AlignCenter)
 	pager = tview.NewPages().AddPage("main", grid, true, true)
 	pager.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		log.Println("pager key handler", event.Name())

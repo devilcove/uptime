@@ -13,14 +13,6 @@ type key struct {
 	help string
 }
 
-var mainKeys = []key{
-	{"F1", "show about"},
-	{"Esc", "close dialog/application"},
-	{"Enter", "site history"},
-	{"", ""},
-	{"?", "detailed help for a pane"},
-}
-
 func dialog(p tview.Primitive, w, h int) tview.Primitive { //nolint:ireturn,varnamelen
 	return tview.NewFlex().
 		AddItem(nil, 0, 1, false).
@@ -33,6 +25,14 @@ func dialog(p tview.Primitive, w, h int) tview.Primitive { //nolint:ireturn,varn
 }
 
 func about(p tview.Primitive) tview.Primitive {
+	mainKeys := []key{
+		{"Esc", "close dialog/application"},
+		{"Enter", "site history"},
+		{"m", "create new monitor"},
+		{"", ""},
+		{"?", "detailed help for a pane"},
+	}
+
 	table := tview.NewTable()
 	for i, key := range mainKeys {
 		table.SetCell(i, 0, tview.NewTableCell(key.name).
@@ -75,4 +75,14 @@ func help(name string, p tview.Primitive, keys []key) tview.Primitive {
 	height := len(keys) + 3
 	log.Println("dialog", name, width, height)
 	return dialog(table, int(width), height)
+}
+
+func errorDialog(msg string) tview.Primitive {
+	return tview.NewModal().
+		SetText(msg).
+		AddButtons([]string{"Close"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			page, _ := pager.GetFrontPage()
+			pager.RemovePage(page)
+		})
 }

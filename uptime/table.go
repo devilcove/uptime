@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/devilcove/uptime"
@@ -20,11 +21,11 @@ func newTable() *tview.Table {
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		log.Println("table key handler", tcell.KeyNames[event.Key()])
 		switch event.Key() {
-		case tcell.KeyEnter:
-			log.Println("enter key")
-			return event
 		case tcell.KeyRune:
 			switch event.Rune() {
+			case 'm':
+				monitor := monitorForm("monitor")
+				pager.AddPage("monitor", monitor, true, true)
 			case '?':
 				about := about(table)
 				pager.AddPage("help", about, true, true)
@@ -56,4 +57,45 @@ func updateTable(table *tview.Table, data []uptime.Status) {
 			SetAlign(tview.AlignCenter).SetExpansion(1))
 	}
 	app.Draw()
+}
+
+func monitorForm(dialog string) tview.Primitive {
+	monitor := uptime.Monitor{}
+	form := tview.NewForm().
+		AddInputField("Name:", "", 0, nil, nil).
+		AddInputField("Url:", "", 0, nil, nil).
+		AddDropDown("Type", []string{"website", "ping"}, 0, nil).
+		AddDropDown("Freq", []string{"1m", "5m", "30m", "60m"}, 0, nil).
+		AddDropDown("Timeout", []string{"1s", "2s", "5s", "10s"}, 0, nil).
+		AddButton("Cancel", func() {
+			pager.RemovePage(dialog)
+		})
+	form.AddButton("Create", func() {
+		monitor.Name = form.GetFormItem(0).(*tview.InputField).GetText()
+		monitor.Url = form.GetFormItem(1).(*tview.InputField).GetText()
+		selected, _ := form.GetFormItem(2).(*tview.DropDown).GetCurrentOption()
+		monitor.Type = uptime.Type(selected)
+		_, monitor.Freq = form.GetFormItem(3).(*tview.DropDown).GetCurrentOption()
+		_, monitor.Timeout = form.GetFormItem(4).(*tview.DropDown).GetCurrentOption()
+		db, err := uptime.OpenDB()
+		if err != nil {
+			log.Println("open database", err)
+		}
+		defer db.Close()
+		if err := uptime.SaveMonitor(db, monitor); err != nil {
+			log.Println("new monitor", err)
+			pager.AddPage("error", errorDialog(err.Error()), true, true)
+		}
+		pager.RemovePage(dialog)
+	})
+	form.SetBorder(true).SetTitle("Add Monitor").SetTitleAlign(tview.AlignCenter)
+	return form
+}
+
+func validateURL(text string, last rune) bool {
+	log.Println("validateURL", text)
+	if !strings.Contains(text, "http://") {
+		return false
+	}
+	return true
 }
