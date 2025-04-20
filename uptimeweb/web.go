@@ -2,6 +2,6 @@ package main
 
 import "log"
 
-func webServer() {
+func main() {
 	log.Println("web server running")
 }
