@@ -83,25 +83,13 @@ func checkHTTP(m *uptime.Monitor) uptime.Status {
 	return s
 }
 
-func getMonitors() []uptime.Monitor {
-	return []uptime.Monitor{
-		{
-			Type:    uptime.HTTP,
-			Url:     "https://nusak.ca",
-			Freq:    "1m",
-			Name:    "nusak",
-			Timeout: "2s",
-			//Check:   checkHTTP,
-		},
-		{
-			Type:    uptime.HTTP,
-			Url:     "https://time.nusak.ca",
-			Freq:    "1m",
-			Name:    "time",
-			Timeout: "2s",
-			//Check:   checkHTTP,
-		},
+func getMonitors() ([]uptime.Monitor, error) {
+	db, err := uptime.OpenDB()
+	if err != nil {
+		return nil, err
 	}
+	defer db.Close()
+	return uptime.GetMonitors(db)
 }
 
 func getChecker(t uptime.Type) uptime.Checker {

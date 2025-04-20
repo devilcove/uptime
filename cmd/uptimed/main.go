@@ -13,9 +13,14 @@ func main() {
 	}
 	log.SetOutput(logFile)
 	log.Println("logfile opened")
-	monitorers := getMonitors()
-	for _, m := range monitorers {
-		go monitor(&m)
+	monitorers, err := getMonitors()
+	if err != nil {
+		log.Println("get monitors", err)
+	} else {
+		for _, m := range monitorers {
+			log.Println("starting monitor", m.Name)
+			go monitor(&m)
+		}
 	}
 	select {}
 }

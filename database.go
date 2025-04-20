@@ -89,6 +89,7 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 }
 
 func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
+	log.Println("get root bucket", path[0])
 	bucket := tx.Bucket([]byte(path[0]))
 	for _, name := range path[1:] {
 		bucket = bucket.Bucket([]byte(name))
@@ -155,4 +156,21 @@ func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) 
 		return nil
 	})
 	return stats, err
+}
+
+func GetMonitors(db *bbolt.DB) ([]Monitor, error) {
+	monitors := []Monitor{}
+	monitor := Monitor{}
+	err := db.View(func(tx *bbolt.Tx) error {
+		bucket := getBucket([]string{"monitors"}, tx)
+		bucket.ForEach(func(k, v []byte) error {
+			if err := json.Unmarshal(v, &monitor); err != nil {
+				return err
+			}
+			monitors = append(monitors, monitor)
+			return nil
+		})
+		return nil
+	})
+	return monitors, err
 }
