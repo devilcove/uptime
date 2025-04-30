@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/devilcove/uptime"
@@ -23,6 +27,9 @@ func newTable() *tview.Table {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
+			//case 'l':
+			//logs := dialog(showLogs("logs"), 600, 400)
+			//pager.AddPage("logs", logs, true, true)
 			case 'm':
 				monitor := monitorForm("monitor")
 				pager.AddPage("monitor", monitor, true, true)
@@ -86,11 +93,16 @@ func monitorForm(dialog string) tview.Primitive {
 			log.Println("new monitor", err)
 			pager.AddPage("error", errorDialog(err.Error()), true, true)
 		}
+		signalDaemon()
 		pager.RemovePage(dialog)
 	})
 	form.SetBorder(true).SetTitle("Add Monitor").SetTitleAlign(tview.AlignCenter)
 	return form
 }
+
+//func showLogs() tview.Primitive {
+//logfile :=
+//}
 
 func validateURL(text string, last rune) bool {
 	log.Println("validateURL", text)
@@ -98,4 +110,21 @@ func validateURL(text string, last rune) bool {
 		return false
 	}
 	return true
+}
+
+func signalDaemon() {
+	bytes, err := os.ReadFile(filepath.Join(os.TempDir(), "uptimed.pid"))
+	if err != nil {
+		log.Println("read pid", err)
+		return
+	}
+	pid, _ := strconv.Atoi(string(bytes))
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		log.Println("no uptimed process", err)
+		return
+	}
+	if err := proc.Signal(syscall.SIGHUP); err != nil {
+		log.Println("signal uptimed", err)
+	}
 }

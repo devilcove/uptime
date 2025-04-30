@@ -92,16 +92,20 @@ func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	log.Println("get root bucket", path[0])
 	bucket := tx.Bucket([]byte(path[0]))
 	for _, name := range path[1:] {
+		log.Println("get nested bucket", name)
 		bucket = bucket.Bucket([]byte(name))
 	}
 	return bucket
 }
 
 func getKey(path []string, tx *bbolt.Tx) []byte {
+	log.Println("get bucket", path[:len(path)-1])
 	bucket := getBucket(path[:len(path)-1], tx)
 	if bucket == nil {
+		log.Println("nil bucket")
 		return []byte{}
 	}
+	log.Println("checking if key exists", path, path[len(path)-1])
 	key := bucket.Get([]byte(path[len(path)-1]))
 	return key
 }
@@ -169,6 +173,7 @@ func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) 
 			if err := json.Unmarshal(v, &status); err != nil {
 				return err
 			}
+			log.Println("add to history", status.Time)
 			stats = append(stats, status)
 		}
 		return nil
@@ -198,7 +203,8 @@ func SaveMonitor(db *bbolt.DB, monitor Monitor) error {
 		return err
 	}
 	return db.Update(func(tx *bbolt.Tx) error {
-		if keyExists([]string{"monitor", monitor.Name}, tx) {
+		log.Println("checking if monitor", monitor.Name, "exists")
+		if keyExists([]string{"monitors", monitor.Name}, tx) {
 			return errors.New("key exists")
 		}
 		bucket := tx.Bucket([]byte("monitors"))

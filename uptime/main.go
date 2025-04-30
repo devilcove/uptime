@@ -68,6 +68,9 @@ func main() {
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		log.Println("app key handler", event.Name())
 		switch event.Key() {
+		case tcell.KeyCtrlR:
+			log.Println("restart daemon")
+			signalDaemon()
 		case tcell.KeyEnter:
 			log.Println("enter key")
 		case tcell.KeyEsc:

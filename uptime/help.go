@@ -28,6 +28,10 @@ func about(p tview.Primitive) tview.Primitive {
 	mainKeys := []key{
 		{"Esc", "close dialog/application"},
 		{"Enter", "site history"},
+		{"Ctrl-R", "restart uptime daemon"},
+		{"d", "delete monitor"},
+		{"e", "edit monitor"},
+		{"l", "view logs"},
 		{"m", "create new monitor"},
 		{"", ""},
 		{"?", "detailed help for a pane"},

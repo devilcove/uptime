@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/devilcove/uptime"
 )
 
-func monitor(m *uptime.Monitor) {
+func monitor(ctx context.Context, wg *sync.WaitGroup, m *uptime.Monitor) {
+	defer wg.Done()
 	checker := getChecker(m.Type)
 	if checker == nil {
 		log.Println("no checker for", m.Name, m.Type)
@@ -26,6 +29,9 @@ func monitor(m *uptime.Monitor) {
 	log.Println("starting monitor", m.Name)
 	for {
 		select {
+		case <-ctx.Done():
+			log.Println(m.Name, "shutting down")
+			return
 		case <-ticker.C:
 			updateStatus(m, checker)
 		case <-timer.C:
@@ -36,6 +42,13 @@ func monitor(m *uptime.Monitor) {
 
 func updateStatus(m *uptime.Monitor, check uptime.Checker) {
 	status := check(m)
+	if status.Status == m.Status.Status {
+		if status.Time.Sub(m.Status.Time) < time.Hour {
+			log.Println("no change and less than 24 hours ... skipping", m.Name)
+			return
+		}
+	}
+	m.Status = status
 	bytes, err := json.Marshal(&status)
 	if err != nil {
 		log.Println("json err", err)

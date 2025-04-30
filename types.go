@@ -33,6 +33,7 @@ type Monitor struct {
 	Freq    string
 	Name    string
 	Timeout string
+	Status  Status
 	//Check   func(*Monitor) status
 }
 
@@ -56,4 +57,12 @@ var TimeFrameNames = map[TimeFrame]string{
 
 func (t TimeFrame) Name() string {
 	return TimeFrameNames[t]
+}
+
+type StatusData struct {
+	Title string
+	Theme string
+	Page  string
+	Site  string
+	Data  []any
 }
