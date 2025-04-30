@@ -44,7 +44,7 @@ func updateStatus(m *uptime.Monitor, check uptime.Checker) {
 	status := check(m)
 	if status.Status == m.Status.Status {
 		if status.Time.Sub(m.Status.Time) < time.Hour {
-			log.Println("no change and less than 24 hours ... skipping", m.Name)
+			log.Println("no change in last hour ... skipping", m.Name)
 			return
 		}
 	}

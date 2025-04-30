@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
+	"strconv"
 
 	"github.com/devilcove/uptime"
 	"github.com/gorilla/sessions"
@@ -114,11 +116,32 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Println(r.FormValue("name"))
-	log.Println(r.FormValue("url"))
-	log.Println(r.FormValue("type"))
-	log.Println(r.FormValue("freq"))
-	log.Println(r.FormValue("timeout"))
+	monitor := uptime.Monitor{
+		Name:    r.FormValue("name"),
+		Url:     r.FormValue("url"),
+		Freq:    r.FormValue("freq"),
+		Timeout: r.FormValue("timeout"),
+	}
+	type_, err := strconv.Atoi(r.FormValue("type"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	monitor.Type = uptime.Type(type_)
+	if !validateURL(monitor.Url) {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+	db := openDB(w)
+	if db == nil {
+		return
+	}
+	defer db.Close()
+	if err := uptime.SaveMonitor(db, monitor); err != nil {
+		log.Println("new monitor", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -196,4 +219,9 @@ func openDB(w http.ResponseWriter) *bbolt.DB {
 		return nil
 	}
 	return db
+}
+
+func validateURL(s string) bool {
+	u, err := url.Parse(s)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }
