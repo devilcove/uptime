@@ -140,7 +140,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
-	if err := uptime.SaveMonitor(db, monitor); err != nil {
+	if err := uptime.SaveMonitor(db, monitor, false); err != nil {
 		log.Println("new monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -149,8 +149,70 @@ func create(w http.ResponseWriter, r *http.Request) {
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
-
+	site := r.PathValue("site")
+	db := openDB(w)
+	if db == nil {
+		return
+	}
+	defer db.Close()
+	monitor, err := uptime.GetMonitor(db, site)
+	if err != nil {
+		log.Println("get monitor", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	data := uptime.StatusData{
+		Title: "Edit Monitor",
+		Page:  "edit",
+		Site:  site,
+	}
+	data.Data = append(data.Data, monitor)
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	buf.WriteTo(w)
 }
+
+func editMonitor(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Println("parse form", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	monitor := uptime.Monitor{
+		Name:    r.FormValue("name"),
+		Url:     r.FormValue("url"),
+		Freq:    r.FormValue("freq"),
+		Timeout: r.FormValue("timeout"),
+	}
+	type_, err := strconv.Atoi(r.FormValue("type"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	monitor.Type = uptime.Type(type_)
+	if monitor.Type == uptime.PING {
+		w.Write([]byte("not implemente yet"))
+		return
+	}
+	if !validateURL(monitor.Url) {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+	db := openDB(w)
+	if db == nil {
+		return
+	}
+	defer db.Close()
+	if err := uptime.SaveMonitor(db, monitor, true); err != nil {
+		log.Println("new monitor", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
 func delete(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
 	log.Println("delete", site)

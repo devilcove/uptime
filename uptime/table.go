@@ -88,7 +88,7 @@ func monitorForm(dialog string) tview.Primitive {
 			log.Println("open database", err)
 		}
 		defer db.Close()
-		if err := uptime.SaveMonitor(db, monitor); err != nil {
+		if err := uptime.SaveMonitor(db, monitor, false); err != nil {
 			log.Println("new monitor", err)
 			pager.AddPage("error", errorDialog(err.Error()), true, true)
 		}

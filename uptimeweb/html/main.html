@@ -99,6 +99,8 @@
     {{ template "new" . }}
     {{ else if (eq .Page "delete") }}
     {{ template "delete" . }}
+    {{ else if (eq .Page "edit") }}
+    {{ template "edit" . }}
     {{ end }}
 </body>
 

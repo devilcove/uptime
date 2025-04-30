@@ -34,7 +34,8 @@ func main() {
 	http.Handle("POST /new", logger(auth(http.HandlerFunc(create))))
 	http.Handle("GET /delete/{site}", logger(auth(http.HandlerFunc(delete))))
 	http.Handle("POST /delete/{site}", logger(auth(http.HandlerFunc(deleteMonitor))))
-	http.Handle("/edit/{site}", logger(auth(http.HandlerFunc(edit))))
+	http.Handle("GET /edit/{site}", logger(auth(http.HandlerFunc(edit))))
+	http.Handle("POST /edit/{site}", logger(auth(http.HandlerFunc(editMonitor))))
 	http.Handle("/history/{site}/{duration}", logger(auth(http.HandlerFunc(history))))
 
 	log.Println("web server running :8090")

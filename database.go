@@ -197,15 +197,32 @@ func GetMonitors(db *bbolt.DB) ([]Monitor, error) {
 	return monitors, err
 }
 
-func SaveMonitor(db *bbolt.DB, monitor Monitor) error {
+func GetMonitor(db *bbolt.DB, name string) (Monitor, error) {
+	monitor := Monitor{}
+	err := db.View(func(tx *bbolt.Tx) error {
+		bucket := getBucket([]string{"monitors"}, tx)
+		value := bucket.Get([]byte(name))
+		if err := json.Unmarshal(value, &monitor); err != nil {
+			return err
+		}
+		return nil
+	})
+	return monitor, err
+}
+
+func SaveMonitor(db *bbolt.DB, monitor Monitor, update bool) error {
 	bytes, err := json.Marshal(monitor)
 	if err != nil {
 		return err
 	}
 	return db.Update(func(tx *bbolt.Tx) error {
 		log.Println("checking if monitor", monitor.Name, "exists")
-		if keyExists([]string{"monitors", monitor.Name}, tx) {
+		keyExists := keyExists([]string{"monitors", monitor.Name}, tx)
+		if keyExists && !update {
 			return errors.New("key exists")
+		}
+		if !keyExists && update {
+			return errors.New("no suck key")
 		}
 		bucket := tx.Bucket([]byte("monitors"))
 		if err := bucket.Put([]byte(monitor.Name), bytes); err != nil {
