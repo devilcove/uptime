@@ -32,7 +32,8 @@ func main() {
 	http.Handle("/logs", logger(auth(http.HandlerFunc(logs))))
 	http.Handle("GET /new", logger(auth(http.HandlerFunc(new))))
 	http.Handle("POST /new", logger(auth(http.HandlerFunc(create))))
-	http.Handle("/delete/{site}", logger(auth(http.HandlerFunc(delete))))
+	http.Handle("GET /delete/{site}", logger(auth(http.HandlerFunc(delete))))
+	http.Handle("POST /delete/{site}", logger(auth(http.HandlerFunc(deleteMonitor))))
 	http.Handle("/edit/{site}", logger(auth(http.HandlerFunc(edit))))
 	http.Handle("/history/{site}/{duration}", logger(auth(http.HandlerFunc(history))))
 

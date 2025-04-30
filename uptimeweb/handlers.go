@@ -107,7 +107,6 @@ func new(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	buf.WriteTo(w)
-
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +127,10 @@ func create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	monitor.Type = uptime.Type(type_)
+	if monitor.Type == uptime.PING {
+		w.Write([]byte("not implemente yet"))
+		return
+	}
 	if !validateURL(monitor.Url) {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
@@ -149,7 +152,49 @@ func edit(w http.ResponseWriter, r *http.Request) {
 
 }
 func delete(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	log.Println("delete", site)
+	data := uptime.StatusData{
+		Title: "New Monitor",
+		Page:  "delete",
+		Site:  site,
+	}
+	data.Data = append(data.Data, site)
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
+}
 
+func deleteMonitor(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	if err := r.ParseForm(); err != nil {
+		log.Println("parse form", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println("delete site", site, r.FormValue("history"))
+	db := openDB(w)
+	if db == nil {
+		return
+	}
+	defer db.Close()
+	if err := uptime.DeleteMonitor(db, site); err != nil {
+		log.Println("delete site", site, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if r.FormValue("history") != "" {
+		if err := uptime.DeleteHistory(db, site); err != nil {
+			log.Println("delete history", site, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func history(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +221,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 	history, err := uptime.GetHistory(db, []string{"history", site}, timeFrame)
 	if err != nil {
 		log.Println("get status", err)
-		http.Error(w, "unable to access database", http.StatusInternalServerError)
+		http.Error(w, "unable to access database: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	slices.Reverse(history)

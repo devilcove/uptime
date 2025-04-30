@@ -97,6 +97,8 @@
     {{ template "history" . }}
     {{ else if (eq .Page "new") }}
     {{ template "new" . }}
+    {{ else if (eq .Page "delete") }}
+    {{ template "delete" . }}
     {{ end }}
 </body>
 

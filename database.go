@@ -214,3 +214,21 @@ func SaveMonitor(db *bbolt.DB, monitor Monitor) error {
 		return nil
 	})
 }
+
+func DeleteMonitor(db *bbolt.DB, name string) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("monitors"))
+		return bucket.Delete([]byte(name))
+	})
+}
+
+func DeleteHistory(db *bbolt.DB, name string) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("history"))
+		if err := bucket.DeleteBucket([]byte(name)); err != nil {
+			return err
+		}
+		bucket = tx.Bucket([]byte("status"))
+		return bucket.Delete([]byte(name))
+	})
+}

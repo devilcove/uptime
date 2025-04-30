@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -98,18 +97,6 @@ func monitorForm(dialog string) tview.Primitive {
 	})
 	form.SetBorder(true).SetTitle("Add Monitor").SetTitleAlign(tview.AlignCenter)
 	return form
-}
-
-//func showLogs() tview.Primitive {
-//logfile :=
-//}
-
-func validateURL(text string, last rune) bool {
-	log.Println("validateURL", text)
-	if !strings.Contains(text, "http://") {
-		return false
-	}
-	return true
 }
 
 func signalDaemon() {
