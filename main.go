@@ -15,6 +15,9 @@ func main() {
 	if err == nil {
 		log.SetOutput(logFile)
 	}
+	if err := OpenDB(); err != nil {
+		log.Fatal(err)
+	}
 	wgMonitors := &sync.WaitGroup{}
 	wgWeb := &sync.WaitGroup{}
 	quit := make(chan os.Signal, 1)
@@ -37,6 +40,7 @@ func main() {
 			cancelWeb()
 			wgMonitors.Wait()
 			wgWeb.Wait()
+			db.Close()
 			return
 		case <-reset:
 			log.Println("reset monitors")

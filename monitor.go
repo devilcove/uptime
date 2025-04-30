@@ -10,7 +10,7 @@ import (
 )
 
 func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
-	monitorers, err := getMonitors()
+	monitorers, err := GetMonitors()
 	if err != nil {
 		log.Println("get monitors", err)
 	} else {
@@ -66,17 +66,11 @@ func updateStatus(m *Monitor, check Checker) {
 		return
 	}
 	log.Println("updating status", m.Name, status.Status)
-	db, err := OpenDB()
-	if err != nil {
-		log.Println("open database", m.Name, err)
-		return
-	}
-	defer db.Close()
-	if err = AddKey(db, m.Name, []string{"status"}, bytes); err != nil {
+	if err = AddKey(m.Name, []string{"status"}, bytes); err != nil {
 		log.Println("update database", m.Name, err)
 		return
 	}
-	if err = AddKey(db, status.Time.Format(time.RFC3339),
+	if err = AddKey(status.Time.Format(time.RFC3339),
 		[]string{"history", m.Name}, bytes); err != nil {
 		log.Println("update history", m.Name, err)
 	}
@@ -106,15 +100,6 @@ func checkHTTP(m *Monitor) Status {
 	s.Status = resp.Status
 	s.StatusCode = resp.StatusCode
 	return s
-}
-
-func getMonitors() ([]Monitor, error) {
-	db, err := OpenDB()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-	return GetMonitors(db)
 }
 
 func getChecker(t Type) Checker {

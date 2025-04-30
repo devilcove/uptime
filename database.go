@@ -14,27 +14,15 @@ import (
 	berrors "go.etcd.io/bbolt/errors"
 )
 
-var (
-	//DB     *bbolt.DB
-	old    string
-	Tables = []Table{
-		{Name: "status", Path: []string{"status"}},
-	}
-)
+var db *bbolt.DB
 
-type Table struct {
-	Name string
-	Path []string
-}
-
-func OpenDB() (*bbolt.DB, error) {
-	var db *bbolt.DB
+func OpenDB() error {
 	var success bool
 	var err error
 	config := GetConfig()
 	if config == nil {
 		log.Println("no config ... bailing")
-		return nil, fmt.Errorf("no configuration")
+		return fmt.Errorf("no configuration")
 	}
 	xdg, ok := os.LookupEnv("XDG_DATA_HOME")
 	if !ok {
@@ -58,15 +46,10 @@ func OpenDB() (*bbolt.DB, error) {
 		}
 	}
 	if !success {
-		return nil, err
+		return err
 	}
-
-	//old = file
 	log.Println("loaded db file", file)
-	//if err := createTables(Tables); err != nil {
-	//return fmt.Errorf("create tables %w", err)
-	//}
-	return db, nil
+	return nil
 }
 
 func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
@@ -116,14 +99,14 @@ func keyExists(path []string, tx *bbolt.Tx) bool {
 
 }
 
-func AddKey(db *bbolt.DB, name string, path []string, value []byte) error {
+func AddKey(name string, path []string, value []byte) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := createBucket(path, tx)
 		return bucket.Put([]byte(name), value)
 	})
 }
 
-func GetKeys(db *bbolt.DB, path []string) ([]Status, error) {
+func GetKeys(path []string) ([]Status, error) {
 	allStatus := []Status{}
 	status := Status{}
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -140,7 +123,7 @@ func GetKeys(db *bbolt.DB, path []string) ([]Status, error) {
 	return allStatus, err
 }
 
-func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) {
+func GetHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
 	max := []byte(time.Now().Format(time.RFC3339))
@@ -181,7 +164,7 @@ func GetHistory(db *bbolt.DB, path []string, frame TimeFrame) ([]Status, error) 
 	return stats, err
 }
 
-func GetMonitors(db *bbolt.DB) ([]Monitor, error) {
+func GetMonitors() ([]Monitor, error) {
 	monitors := []Monitor{}
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -197,7 +180,7 @@ func GetMonitors(db *bbolt.DB) ([]Monitor, error) {
 	return monitors, err
 }
 
-func GetMonitor(db *bbolt.DB, name string) (Monitor, error) {
+func GetMonitor(name string) (Monitor, error) {
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket([]string{"monitors"}, tx)
@@ -210,7 +193,7 @@ func GetMonitor(db *bbolt.DB, name string) (Monitor, error) {
 	return monitor, err
 }
 
-func SaveMonitor(db *bbolt.DB, monitor Monitor, update bool) error {
+func SaveMonitor(monitor Monitor, update bool) error {
 	bytes, err := json.Marshal(monitor)
 	if err != nil {
 		return err
@@ -232,14 +215,14 @@ func SaveMonitor(db *bbolt.DB, monitor Monitor, update bool) error {
 	})
 }
 
-func DeleteMonitor(db *bbolt.DB, name string) error {
+func DeleteMonitor(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("monitors"))
 		return bucket.Delete([]byte(name))
 	})
 }
 
-func DeleteHistory(db *bbolt.DB, name string) error {
+func DeleteHistory(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("history"))
 		if err := bucket.DeleteBucket([]byte(name)); err != nil {

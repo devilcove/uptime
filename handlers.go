@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/sessions"
-	"go.etcd.io/bbolt"
 )
 
 func loggout(w http.ResponseWriter, r *http.Request) {
@@ -44,16 +43,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
-	//if r.URL.Path != "/" {
-	//http.NotFound(w, r)
-	//return
-	//}
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	status, err := GetKeys(db, []string{"status"})
+	status, err := GetKeys([]string{"status"})
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database", http.StatusInternalServerError)
@@ -134,12 +124,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	if err := SaveMonitor(db, monitor, false); err != nil {
+	if err := SaveMonitor(monitor, false); err != nil {
 		log.Println("new monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -149,12 +134,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 func edit(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	monitor, err := GetMonitor(db, site)
+	monitor, err := GetMonitor(site)
 	if err != nil {
 		log.Println("get monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -199,12 +179,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	if err := SaveMonitor(db, monitor, true); err != nil {
+	if err := SaveMonitor(monitor, true); err != nil {
 		log.Println("new monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -238,18 +213,13 @@ func deleteMonitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("delete site", site, r.FormValue("history"))
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	if err := DeleteMonitor(db, site); err != nil {
+	if err := DeleteMonitor(site); err != nil {
 		log.Println("delete site", site, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if r.FormValue("history") != "" {
-		if err := DeleteHistory(db, site); err != nil {
+		if err := DeleteHistory(site); err != nil {
 			log.Println("delete history", site, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -274,12 +244,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 	default:
 		timeFrame = Hour
 	}
-	db := openDB(w)
-	if db == nil {
-		return
-	}
-	defer db.Close()
-	history, err := GetHistory(db, []string{"history", site}, timeFrame)
+	history, err := GetHistory([]string{"history", site}, timeFrame)
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database: "+err.Error(), http.StatusInternalServerError)
@@ -309,22 +274,6 @@ func history(w http.ResponseWriter, r *http.Request) {
 	}
 	buf.WriteTo(w)
 
-}
-
-func openDB(w http.ResponseWriter) *bbolt.DB {
-	//config := GetConfig()
-	//if config == nil {
-	//log.Println("no configuration ... bailing")
-	//http.Error(w, "invaild server configuration", http.StatusInternalServerError)
-	//return nil
-	//}
-	db, err := OpenDB()
-	if err != nil {
-		log.Println("database access", err)
-		http.Error(w, "unable to access database", http.StatusInternalServerError)
-		return nil
-	}
-	return db
 }
 
 func validateURL(s string) bool {
