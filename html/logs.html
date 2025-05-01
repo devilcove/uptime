@@ -1,0 +1,10 @@
+{{define "logs"}}
+<div class="center">
+
+        <button onclick="location.href='/logs'" type="button">Refresh</button>
+        <button onclick="location.href='/'" type="button">Home</button>
+</div>
+{{range .Data}}
+{{.}}<br>
+{{end}}
+{{end}}

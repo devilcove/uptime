@@ -90,6 +90,8 @@
     {{ template "edit" . }}
     {{ else if (eq .Page "login") }}
     {{ template "login" . }}
+    {{ else if (eq .Page "logs") }}
+    {{ template "logs" . }}
     {{ end }}
 </body>
 

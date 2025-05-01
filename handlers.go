@@ -9,6 +9,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/gorilla/sessions"
@@ -113,9 +114,24 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unable to retrieve logs", http.StatusInternalServerError)
 		return
 	}
-	if _, err := w.Write(logs); err != nil {
-		log.Println("display logs", err)
+	data := StatusData{
+		Title: "Logs",
+		Page:  "logs",
 	}
+	lines := strings.Split(string(logs), "\n")
+	for i := len(lines) - 1; i > len(lines)-200; i-- {
+		if i < 0 {
+			break
+		}
+		data.Data = append(data.Data, lines[i])
+	}
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
 }
 
 func new(w http.ResponseWriter, r *http.Request) {
