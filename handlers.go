@@ -25,12 +25,30 @@ func loggout(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
-	if _, err := w.Write([]byte("Goodbye")); err != nil {
-		log.Println("write", err)
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "logout", nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
 	}
+	buf.WriteTo(w)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Println("parse form", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user := User{
+		Name: r.FormValue("name"),
+		Pass: r.FormValue("pass"),
+	}
+	if !validateUser(user) {
+		log.Println("unauthorized user")
+		http.Error(w, "unauthozied", http.StatusUnauthorized)
+		return
+	}
 	store = sessions.NewCookieStore([]byte("secret"))
 	store.MaxAge(120) // TODO change for production
 	session, err := store.Get(r, "helloworld")
@@ -41,7 +59,21 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
-	templates.ExecuteTemplate(w, "login", nil)
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func displayLogin(w http.ResponseWriter, r *http.Request) {
+	data := StatusData{
+		Title: "Login",
+		Page:  "login",
+	}
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +84,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := StatusData{
-		Title: "Testing",
+		Title: "Uptime",
 		Theme: "indigo",
 		Page:  "status",
 	}
@@ -194,7 +226,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
 	log.Println("delete", site)
 	data := StatusData{
-		Title: "New Monitor",
+		Title: "Delete Monitor",
 		Page:  "delete",
 		Site:  site,
 	}
@@ -255,7 +287,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 	}
 	slices.Reverse(history)
 	data := StatusData{
-		Title: "History for " + site,
+		Title: "History: " + site,
 		Theme: "indigo",
 		Page:  "history",
 		Site:  site,

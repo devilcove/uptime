@@ -32,7 +32,8 @@ func web(ctx context.Context, wg *sync.WaitGroup, restart func()) {
 	log.SetFlags(log.Ltime | log.Ldate | log.Lshortfile)
 
 	http.Handle("/logout", logger(http.HandlerFunc(loggout)))
-	http.Handle("/login", logger(http.HandlerFunc(login)))
+	http.Handle("GET /login", logger(http.HandlerFunc(displayLogin)))
+	http.Handle("POST /login", logger(http.HandlerFunc(login)))
 	http.Handle("/{$}", logger(auth(http.HandlerFunc(mainPage))))
 	http.Handle("/logs", logger(auth(http.HandlerFunc(logs))))
 	http.Handle("GET /new", logger(auth(http.HandlerFunc(new))))
@@ -74,6 +75,9 @@ func auth(next http.Handler) http.Handler {
 		if !loggedIn.(bool) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
+		}
+		if err := session.Save(r, w); err != nil {
+			log.Println("save session", err)
 		}
 		next.ServeHTTP(w, r)
 	})

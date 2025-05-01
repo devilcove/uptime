@@ -12,6 +12,7 @@ import (
 
 	"go.etcd.io/bbolt"
 	berrors "go.etcd.io/bbolt/errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var db *bbolt.DB
@@ -231,4 +232,23 @@ func DeleteHistory(name string) error {
 		bucket = tx.Bucket([]byte("status"))
 		return bucket.Delete([]byte(name))
 	})
+}
+
+func validateUser(user User) bool {
+	var pass []byte
+	if err := db.View(func(tx *bbolt.Tx) error {
+		pass = getKey([]string{"users", user.Name}, tx)
+		if pass == nil {
+			log.Println("no such user")
+			return errors.New("no such user")
+		}
+		return nil
+	}); err != nil {
+		return false
+	}
+	if err := bcrypt.CompareHashAndPassword(pass, []byte(user.Pass)); err != nil {
+		log.Println("invalid pass", err)
+		return false
+	}
+	return true
 }

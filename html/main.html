@@ -88,6 +88,8 @@
     {{ template "delete" . }}
     {{ else if (eq .Page "edit") }}
     {{ template "edit" . }}
+    {{ else if (eq .Page "login") }}
+    {{ template "login" . }}
     {{ end }}
 </body>
 

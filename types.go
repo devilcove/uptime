@@ -66,3 +66,8 @@ type StatusData struct {
 	Site  string
 	Data  []any
 }
+
+type User struct {
+	Name string
+	Pass string
+}

@@ -1,12 +1,20 @@
 {{ define "login" }}
-<!doctype html>
-<html lang="en">
-    <head>
-        <title>{{ .Title }}</title>
-    </head>
-    <body>
-        <H1> Login Page</H1>
-        <a href="/">Main page</a>
-    </body>
-</html>
+<div class="center">
+    <form action="/login" method="post">
+        <fieldset>
+            <table class="center">
+                <tr>
+                    <td><label for="name">Name</label></td>
+                    <td><input name="name" type="text" size="40"></td>
+                </tr>
+                <tr>
+                    <td><label for="pass">Pass</label></td>
+                    <td><input name="pass" type="password" size="40"></td>
+                </tr>
+            </table>
+            <br>
+            <button type="submit" value="Submit">Submit</button>
+        </fieldset>            
+    </form>
+</div>
 {{ end }}

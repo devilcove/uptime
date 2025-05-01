@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/sessions v1.4.0
 	github.com/rivo/tview v0.0.0-20250330220935-949945f8d922
 	go.etcd.io/bbolt v1.4.0
+	golang.org/x/crypto v0.23.0
 	golang.org/x/term v0.28.0
 )
 
