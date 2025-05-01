@@ -11,12 +11,12 @@
             text-align: center;
             display: inline-block;
         }
-
         .center {
             text-align: center;
-            background-color: #4a4a4a;
+            background-color: #cecece;
+            margin-left: auto;
+            margin-right: auto;
         }
-
         div.darkTable {
             font-family: "Comic Sans MS", cursive, sans-serif;
             border: 2px solid #000000;
@@ -26,23 +26,19 @@
             text-align: center;
             border-collapse: collapse;
         }
-
         .divTable.darkTable .divTableCell,
         .divTable.darkTable .divTableHead {
             border: 1px solid #4A4A4A;
             padding: 3px 2px;
         }
-
         .divTable.darkTable .divTableBody .divTableCell {
             font-size: 13px;
             color: #E6E6E6;
         }
-
         .divTable.darkTable .divTableHeading {
             background: #000000;
             border-bottom: 3px solid #000000;
         }
-
         .divTable.darkTable .divTableHeading .divTableHead {
             font-size: 15px;
             font-weight: bold;
@@ -50,47 +46,38 @@
             text-align: center;
             border-left: 2px solid #4A4A4A;
         }
-
         .divTable.darkTable .divTableHeading .divTableHead:first-child {
             border-left: none;
         }
-
         .darkTable .tableFootStyle {
             font-size: 12px;
         }
-
         .divTable {
             display: table;
         }
-
         .divTableRow {
             display: table-row;
         }
-
         .divTableHeading {
             display: table-header-group;
         }
-
         .divTableCell,
         .divTableHead {
             display: table-cell;
         }
-
         .divTableHeading {
             display: table-header-group;
         }
-
         .divTableFoot {
             display: table-footer-group;
         }
-
         .divTableBody {
             display: table-row-group;
         }
     </style>
 </head>
 
-<body style="background-color: #4A4A4A;">
+<body style="background-color: #cecece;">
     {{ if (eq .Page "status") }}
     {{template "status" .Data }}
     {{else if (eq .Page "history") }}

@@ -1,70 +1,89 @@
 {{ define "edit" }}
 <div class="center">
     <h2>Edit Monitor</h2>
-<form accept-charset="UTF-8" action="/edit/{{.Site}}" autocomplete="off" method="post">
-    <fieldset>
-        {{ range .Data }}
-        <legend>Edit Monitor:</legend>
-        <label for="name">Name</label>
-        <input name="name" type="text" value="{{ .Name }}"/><br />
-        <label for="name">URL </label>
-        <input name="url" type="text" value="{{ .Url }}" /><br />
-        <label>Type</label>
-        {{ if (eq .Type 0 ) }}
-        <input checked="checked" name="type" type="radio" value=0> Website 
-        <input name="type" type="radio" value=1 /> Ping <br />
-        {{ else }}
-        <input name="type" type="radio" value=0> Website 
-        <input name="type" type="radio" value=1 checked="checked"/> Ping <br />
-        {{ end }}
-        <label>Frequency</label>
-        {{ if (eq .Freq "1m") }}
-        <input checked="checked" name="freq" type="radio" value="1m" /> 1 Minute 
-        <input name="freq" type="radio" value="5m" /> 5 Minutes 
-        <input name="freq" type="radio" value="30m" /> 30 Minutes 
-        <input name="freq" type="radio" value="60m" /> 60 Minutes<br /> 
-        {{ else if (eq .Freq  "5m") }}
-        <input name="freq" type="radio" value="1m" /> 1 Minute 
-        <input name="freq" type="radio" value="5m" checked="checked"/> 5 Minutes 
-        <input name="freq" type="radio" value="30m" /> 30 Minutes 
-        <input name="freq" type="radio" value="60m" /> 60 Minutes<br /> 
-        {{ else if (eq .Freq "30m") }}
-        <input name="freq" type="radio" value="1m" /> 1 Minute 
-        <input name="freq" type="radio" value="5m" /> 5 Minutes 
-        <input name="freq" type="radio" value="30m" checked="checked"/> 30 Minutes 
-        <input name="freq" type="radio" value="60m" /> 60 Minutes<br /> 
-        {{ else }}
-        <input name="freq" type="radio" value="1m" /> 1 Minute 
-        <input name="freq" type="radio" value="5m" /> 5 Minutes 
-        <input name="freq" type="radio" value="30m" /> 30 Minutes 
-        <input name="freq" type="radio" value="60m" checked="checked"/> 60 Minutes<br /> 
-        {{ end }}
-        <label>Timeout</label>
-        {{ if (eq .Timeout "1s") }}
-        <input name="timeout" type="radio" value="1s" checked="checked"/> 1 Second 
-        <input name="timeout" type="radio" value="2s" /> 2 Seconds
-        <input name="timeout" type="radio" value="5s" /> 5 Seconds
-        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br /> 
-        {{ else if (eq .Timeout "2s") }}
-        <input name="timeout" type="radio" value="1s" /> 1 Second 
-        <input name="timeout" type="radio" value="2s" checked="checked"/> 2 Seconds
-        <input name="timeout" type="radio" value="5s" /> 5 Seconds
-        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br /> 
-        {{ else if (eq .Timeout "5s") }}
-        <input name="timeout" type="radio" value="1s" /> 1 Second 
-        <input name="timeout" type="radio" value="2s" /> 2 Seconds
-        <input name="timeout" type="radio" value="5s" checked="checked"/> 5 Seconds
-        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br /> 
-        {{ else }}
-        <input name="timeout" type="radio" value="1s" /> 1 Second 
-        <input name="timeout" type="radio" value="2s" /> 2 Seconds
-        <input name="timeout" type="radio" value="5s" /> 5 Seconds
-        <input name="timeout" type="radio" value="10s" checked="checked" /> 10 Seconds <br /> 
-        {{ end }}
-        <button onclick="location.href='/'" type="button">Cancel</button>
-        <button type="submit" value="Submit">Submit</button>
-        {{ end }}
-    </fieldset>
-</form>
+    <form accept-charset="UTF-8" action="/edit/{{.Site}}" autocomplete="off" method="post">
+        <fieldset>
+            {{ range .Data }}
+            <legend>Edit Monitor:</legend>
+            <table class="center">
+                <tr>
+                    <td><label for="name">Name</label></td>
+                    <td><input name="name" type="text" value="{{ .Name }}" size="60" /> </td>
+                </tr>
+                <tr>
+                    <td><label for="name">URL </label></td>
+                    <td><input name="url" type="text" value="{{ .Url }}" size="60" /></td>
+                </tr>
+                <tr>
+                    <td><label>Frequency</label></td>
+                    <td>
+                        {{ if (eq .Freq "1m") }}
+                        <input checked="checked" name="freq" type="radio" value="1m" /> 1 Minute
+                        <input name="freq" type="radio" value="5m" /> 5 Minutes
+                        <input name="freq" type="radio" value="30m" /> 30 Minutes
+                        <input name="freq" type="radio" value="60m" /> 60 Minutes<br />
+                        {{ else if (eq .Freq "5m") }}
+                        <input name="freq" type="radio" value="1m" /> 1 Minute
+                        <input name="freq" type="radio" value="5m" checked="checked" /> 5 Minutes
+                        <input name="freq" type="radio" value="30m" /> 30 Minutes
+                        <input name="freq" type="radio" value="60m" /> 60 Minutes<br />
+                        {{ else if (eq .Freq "30m") }}
+                        <input name="freq" type="radio" value="1m" /> 1 Minute
+                        <input name="freq" type="radio" value="5m" /> 5 Minutes
+                        <input name="freq" type="radio" value="30m" checked="checked" /> 30 Minutes
+                        <input name="freq" type="radio" value="60m" /> 60 Minutes<br />
+                        {{ else }}
+                        <input name="freq" type="radio" value="1m" /> 1 Minute
+                        <input name="freq" type="radio" value="5m" /> 5 Minutes
+                        <input name="freq" type="radio" value="30m" /> 30 Minutes
+                        <input name="freq" type="radio" value="60m" checked="checked" /> 60 Minutes<br />
+                        {{ end }}
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>Timeout</label></td>
+                    <td>
+                        {{ if (eq .Timeout "1s") }}
+                        <input name="timeout" type="radio" value="1s" checked="checked" /> 1 Second
+                        <input name="timeout" type="radio" value="2s" /> 2 Seconds
+                        <input name="timeout" type="radio" value="5s" /> 5 Seconds
+                        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br />
+                        {{ else if (eq .Timeout "2s") }}
+                        <input name="timeout" type="radio" value="1s" /> 1 Second
+                        <input name="timeout" type="radio" value="2s" checked="checked" /> 2 Seconds
+                        <input name="timeout" type="radio" value="5s" /> 5 Seconds
+                        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br />
+                        {{ else if (eq .Timeout "5s") }}
+                        <input name="timeout" type="radio" value="1s" /> 1 Second
+                        <input name="timeout" type="radio" value="2s" /> 2 Seconds
+                        <input name="timeout" type="radio" value="5s" checked="checked" /> 5 Seconds
+                        <input name="timeout" type="radio" value="10s" /> 10 Seconds <br />
+                        {{ else }}
+                        <input name="timeout" type="radio" value="1s" /> 1 Second
+                        <input name="timeout" type="radio" value="2s" /> 2 Seconds
+                        <input name="timeout" type="radio" value="5s" /> 5 Seconds
+                        <input name="timeout" type="radio" value="10s" checked="checked" /> 10 Seconds <br />
+                        {{ end }}
+                    </td>
+                </tr>
+                     <tr>
+                    <td><label>Type</label></td>
+                    <td>
+                        {{ if (eq .Type 0 ) }}
+                        <input checked="checked" name="type" type="radio" value=0> Website
+                        <input name="type" type="radio" value=1 /> Ping <br />
+                        {{ else }}
+                        <input name="type" type="radio" value=0> Website
+                        <input name="type" type="radio" value=1 checked="checked" /> Ping <br />
+                        {{ end }}
+                    </td>
+                </tr>
+            </table>
+            <br>
+            <button onclick="location.href='/'" type="button">Cancel</button>
+            <button type="submit" value="Submit">Submit</button>
+            {{ end }}
+        </fieldset>
+    </form>
 </div>
 {{ end }}

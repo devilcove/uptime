@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"slices"
 	"strconv"
+	"syscall"
 
 	"github.com/gorilla/sessions"
 )
@@ -129,6 +131,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	reset <- syscall.SIGHUP
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -278,5 +281,16 @@ func history(w http.ResponseWriter, r *http.Request) {
 
 func validateURL(s string) bool {
 	u, err := url.Parse(s)
-	return err == nil && u.Scheme != "" && u.Host != ""
+	if err != nil {
+		return false
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	//resolver := &net.Resolver{PreferGo: true}
+	if _, err := net.LookupIP(u.Host); err != nil {
+		return false
+	}
+	log.Println(err, u.Scheme, u.Host)
+	return true
 }
