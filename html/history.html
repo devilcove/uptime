@@ -21,7 +21,6 @@
                 <div class="divTableHead">Status</div>
                 <div class="divTableHead">Code</div>
                 <div class="divTableHead">Time</div>
-                <div class="divTableHead">Actions</div>
             </div>
         </div>
         {{ range .Data }}
@@ -31,12 +30,6 @@
                 <div class="divTableCell">{{ .Status }}</div>
                 <div class="divTableCell">{{ .StatusCode }}</div>
                 <div class="divTableCell">{{ .Time.Format "02 Jan 06 15:04 MST" }}</div>
-                <div class="divTableCell">
-                    <a href="/delete/{{ .Site }}">Delete</a>
-                    <a href="/edit/{{ .Site }}">Edit</a>
-                    <a href="/new">Create</a>
-                    <a href="/logs">logs</a>
-                </div>
             </div>
         </div>
         {{ end }}
