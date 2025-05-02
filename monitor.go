@@ -10,7 +10,7 @@ import (
 )
 
 func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
-	monitorers, err := GetMonitors()
+	monitorers, err := getMonitors()
 	if err != nil {
 		log.Println("get monitors", err)
 	} else {
@@ -65,12 +65,11 @@ func updateStatus(m *Monitor, check Checker) {
 		log.Println("json err", err)
 		return
 	}
-	log.Println("updating status", m.Name, status.Status)
-	if err = AddKey(m.Name, []string{"status"}, bytes); err != nil {
+	if err = addKey(m.Name, []string{"status"}, bytes); err != nil {
 		log.Println("update database", m.Name, err)
 		return
 	}
-	if err = AddKey(status.Time.Format(time.RFC3339),
+	if err = addKey(status.Time.Format(time.RFC3339),
 		[]string{"history", m.Name}, bytes); err != nil {
 		log.Println("update history", m.Name, err)
 	}
@@ -89,21 +88,22 @@ func checkHTTP(m *Monitor) Status {
 	timeout, err := time.ParseDuration(m.Timeout)
 	if err != nil {
 		log.Println("Defaulting to 60 second timeout; configured was", m.Timeout)
-		timeout = time.Duration(time.Second * 60)
+		timeout = time.Second * 60
 	}
 	client := http.Client{Timeout: timeout}
-	resp, err := client.Get(m.Url)
+	resp, err := client.Get(m.URL)
 	if err != nil {
 		s.Status = err.Error()
 		return s
 	}
+	defer resp.Body.Close()
 	s.Status = resp.Status
 	s.StatusCode = resp.StatusCode
 	return s
 }
 
 func getChecker(t Type) Checker {
-	switch t {
+	switch t { //nolint:exhaustive
 	case HTTP:
 		return checkHTTP
 	default:

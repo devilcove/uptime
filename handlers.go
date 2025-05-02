@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/gorilla/sessions"
-	"github.com/kr/pretty"
 )
 
 func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
@@ -37,21 +36,12 @@ func admin(w http.ResponseWriter, r *http.Request) {
 	data.Page = "admin"
 	if data.Admin {
 		users := getUsers()
-		log.Println(users)
 		for _, user := range users {
 			log.Println(user)
 			data.Data = append(data.Data, user)
 		}
 	}
-	pretty.Println(data)
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
-	return
+	showTemplate(w, data)
 }
 
 func editUser(w http.ResponseWriter, r *http.Request) {
@@ -69,14 +59,7 @@ func editUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data.Data = append(data.Data, user)
-	pretty.Println(data)
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func newUser(w http.ResponseWriter, r *http.Request) {
@@ -84,13 +67,7 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 		Title: "New User",
 		Page:  "newUser",
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
@@ -157,13 +134,7 @@ func loggout(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "logout", nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, StatusData{})
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -201,13 +172,7 @@ func displayLogin(w http.ResponseWriter, r *http.Request) {
 		Title: "Login",
 		Page:  "login",
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +182,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Title = "Uptime"
 	data.Page = "status"
-	status, err := GetKeys([]string{"status"})
+	status, err := getKeys([]string{"status"})
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database", http.StatusInternalServerError)
@@ -232,13 +197,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Data = append(data.Data, report)
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func logs(w http.ResponseWriter, r *http.Request) {
@@ -259,13 +218,7 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Data = append(data.Data, lines[i])
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func new(w http.ResponseWriter, r *http.Request) {
@@ -273,13 +226,7 @@ func new(w http.ResponseWriter, r *http.Request) {
 		Title: "New Monitor",
 		Page:  "new",
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
@@ -290,7 +237,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor := Monitor{
 		Name:    r.FormValue("name"),
-		Url:     r.FormValue("url"),
+		URL:     r.FormValue("url"),
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 	}
@@ -301,14 +248,14 @@ func create(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor.Type = Type(type_)
 	if monitor.Type == PING {
-		w.Write([]byte("not implemente yet"))
+		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return
 	}
-	if !validateURL(monitor.Url) {
+	if !validateURL(monitor.URL) {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
-	if err := SaveMonitor(monitor, false); err != nil {
+	if err := saveMonitor(monitor, false); err != nil {
 		log.Println("new monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -319,7 +266,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 func edit(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
-	monitor, err := GetMonitor(site)
+	monitor, err := getMonitor(site)
 	if err != nil {
 		log.Println("get monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -330,12 +277,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
 		Site:  site,
 	}
 	data.Data = append(data.Data, monitor)
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func editMonitor(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +288,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor := Monitor{
 		Name:    r.FormValue("name"),
-		Url:     r.FormValue("url"),
+		URL:     r.FormValue("url"),
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 	}
@@ -357,14 +299,14 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor.Type = Type(type_)
 	if monitor.Type == PING {
-		w.Write([]byte("not implemente yet"))
+		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return
 	}
-	if !validateURL(monitor.Url) {
+	if !validateURL(monitor.URL) {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
-	if err := SaveMonitor(monitor, true); err != nil {
+	if err := saveMonitor(monitor, true); err != nil {
 		log.Println("new monitor", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -372,7 +314,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func delete(w http.ResponseWriter, r *http.Request) {
+func deleteSite(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
 	log.Println("delete", site)
 	data := StatusData{
@@ -381,13 +323,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 		Site:  site,
 	}
 	data.Data = append(data.Data, site)
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
+	showTemplate(w, data)
 }
 
 func deleteMonitor(w http.ResponseWriter, r *http.Request) {
@@ -398,13 +334,13 @@ func deleteMonitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("delete site", site, r.FormValue("history"))
-	if err := DeleteMonitor(site); err != nil {
+	if err := removeMonitor(site); err != nil {
 		log.Println("delete site", site, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if r.FormValue("history") != "" {
-		if err := DeleteHistory(site); err != nil {
+		if err := deleteHistory(site); err != nil {
 			log.Println("delete history", site, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -429,7 +365,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 	default:
 		timeFrame = Hour
 	}
-	history, err := GetHistory([]string{"history", site}, timeFrame)
+	history, err := getHistory([]string{"history", site}, timeFrame)
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database: "+err.Error(), http.StatusInternalServerError)
@@ -450,14 +386,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Data = append(data.Data, report)
 	}
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	buf.WriteTo(w)
-
+	showTemplate(w, data)
 }
 
 func validateURL(s string) bool {
@@ -468,10 +397,21 @@ func validateURL(s string) bool {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return false
 	}
-	//resolver := &net.Resolver{PreferGo: true}
 	if _, err := net.LookupIP(u.Host); err != nil {
 		return false
 	}
 	log.Println(err, u.Scheme, u.Host)
 	return true
+}
+
+func showTemplate(w http.ResponseWriter, data StatusData) {
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	if _, err := buf.WriteTo(w); err != nil {
+		log.Println(err)
+	}
 }

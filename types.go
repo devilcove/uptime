@@ -29,12 +29,11 @@ type Status struct {
 
 type Monitor struct {
 	Type    Type
-	Url     string
+	URL     string
 	Freq    string
 	Name    string
 	Timeout string
 	Status  Status
-	//Check   func(*Monitor) status
 }
 
 type TimeFrame int

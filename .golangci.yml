@@ -1,0 +1,44 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - fatcontext
+    - noctx
+    - paralleltest
+    - predeclared
+    - mnd
+    - forcetypeassert
+    - musttag
+    - revive
+    - gosmopolitan
+    - varnamelen
+    - wrapcheck
+    - gochecknoglobals
+    - exhaustruct
+    - depguard
+    - forbidigo
+    - nlreturn
+    - wsl
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

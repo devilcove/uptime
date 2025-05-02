@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/sessions"
 )
@@ -26,10 +27,9 @@ type Report struct {
 	Time   string
 }
 
-func web(ctx context.Context, wg *sync.WaitGroup, restart func()) {
+func web(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	log.Println("starting web server")
-	log.SetFlags(log.Ltime | log.Ldate | log.Lshortfile)
 
 	http.Handle("GET /admin", logger(auth(http.HandlerFunc(admin))))
 	http.Handle("GET /user", logger(auth(isAdmin(http.HandlerFunc(newUser)))))
@@ -45,13 +45,13 @@ func web(ctx context.Context, wg *sync.WaitGroup, restart func()) {
 	http.Handle("/logs", logger(auth(http.HandlerFunc(logs))))
 	http.Handle("GET /new", logger(auth(http.HandlerFunc(new))))
 	http.Handle("POST /new", logger(auth(http.HandlerFunc(create))))
-	http.Handle("GET /delete/{site}", logger(auth(http.HandlerFunc(delete))))
+	http.Handle("GET /delete/{site}", logger(auth(http.HandlerFunc(deleteSite))))
 	http.Handle("POST /delete/{site}", logger(auth(http.HandlerFunc(deleteMonitor))))
 	http.Handle("GET /edit/{site}", logger(auth(http.HandlerFunc(edit))))
 	http.Handle("POST /edit/{site}", logger(auth(http.HandlerFunc(editMonitor))))
 	http.Handle("/history/{site}/{duration}", logger(auth(http.HandlerFunc(history))))
 
-	server := http.Server{Addr: ":8090"}
+	server := http.Server{Addr: ":8090", ReadHeaderTimeout: time.Second}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			log.Println("web server", err)
@@ -60,7 +60,7 @@ func web(ctx context.Context, wg *sync.WaitGroup, restart func()) {
 	log.Println("web server running :8090")
 	<-ctx.Done()
 	log.Println("shutdown web ...")
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err := server.Shutdown(context.Background()); err != nil { //nolint:contextcheck
 		log.Println("web server shutdown", err)
 	}
 }
@@ -101,7 +101,7 @@ func isAdmin(next http.Handler) http.Handler {
 		isAdmin := session.Values["admin"]
 		if x, ok := isAdmin.(bool); !ok || !x {
 			log.Println("not admin")
-			http.Error(w, "admin privilages are required", http.StatusUnauthorized)
+			http.Error(w, "admin privileges are required", http.StatusUnauthorized)
 			return
 		}
 		if err := session.Save(r, w); err != nil {

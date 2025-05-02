@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,24 +14,30 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var db *bbolt.DB
+const (
+	dbFile = "uptime.db"
+)
 
-func OpenDB() error {
+var (
+	db        *bbolt.DB
+	errPath   = errors.New("invalid path")
+	errKey    = errors.New("key exists")
+	errNoKey  = errors.New("no such key")
+	errUser   = errors.New("user exists")
+	errNoUser = errors.New("no such user")
+)
+
+func openDB() error {
 	var success bool
 	var err error
-	config := GetConfig()
-	if config == nil {
-		log.Println("no config ... bailing")
-		return fmt.Errorf("no configuration")
-	}
 	xdg, ok := os.LookupEnv("XDG_DATA_HOME")
 	if !ok {
 		home, _ := os.UserHomeDir()
 		xdg = filepath.Join(home, ".local/share/uptime")
 	}
-	file := filepath.Join(xdg, config.DBFile)
+	file := filepath.Join(xdg, dbFile)
 	for range 5 {
-		db, err = bbolt.Open(file, 0666, &bbolt.Options{Timeout: time.Second})
+		db, err = bbolt.Open(file, 0o666, &bbolt.Options{Timeout: time.Second})
 		if err != nil {
 			if errors.Is(err, berrors.ErrTimeout) {
 				time.Sleep(time.Second)
@@ -59,13 +64,11 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	}
 	bucket, err := tx.CreateBucketIfNotExists([]byte(path[0]))
 	if err != nil {
-		log.Println("create root bucket", path[0], err)
 		return nil
 	}
 	for _, name := range path[1:] {
 		bucket, err = bucket.CreateBucketIfNotExists([]byte(name))
 		if err != nil {
-			log.Println("create nested bucket", name, err)
 			return nil
 		}
 	}
@@ -73,23 +76,18 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 }
 
 func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
-	log.Println("get root bucket", path[0])
 	bucket := tx.Bucket([]byte(path[0]))
 	for _, name := range path[1:] {
-		log.Println("get nested bucket", name)
 		bucket = bucket.Bucket([]byte(name))
 	}
 	return bucket
 }
 
 func getKey(path []string, tx *bbolt.Tx) []byte {
-	log.Println("get bucket", path[:len(path)-1])
 	bucket := getBucket(path[:len(path)-1], tx)
 	if bucket == nil {
-		log.Println("nil bucket")
 		return []byte{}
 	}
-	log.Println("checking if key exists", path, path[len(path)-1])
 	key := bucket.Get([]byte(path[len(path)-1]))
 	return key
 }
@@ -97,34 +95,35 @@ func getKey(path []string, tx *bbolt.Tx) []byte {
 func keyExists(path []string, tx *bbolt.Tx) bool {
 	key := getKey(path, tx)
 	return key != nil
-
 }
 
-func AddKey(name string, path []string, value []byte) error {
+func addKey(name string, path []string, value []byte) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := createBucket(path, tx)
 		return bucket.Put([]byte(name), value)
 	})
 }
 
-func GetKeys(path []string) ([]Status, error) {
+func getKeys(path []string) ([]Status, error) {
 	allStatus := []Status{}
 	status := Status{}
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket(path, tx)
-		bucket.ForEach(func(k, v []byte) error {
+		if err := bucket.ForEach(func(k, v []byte) error {
 			if err := json.Unmarshal(v, &status); err != nil {
 				return err
 			}
 			allStatus = append(allStatus, status)
 			return nil
-		})
+		}); err != nil {
+			return err
+		}
 		return nil
 	})
 	return allStatus, err
 }
 
-func GetHistory(path []string, frame TimeFrame) ([]Status, error) {
+func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
 	max := []byte(time.Now().Format(time.RFC3339))
@@ -141,23 +140,16 @@ func GetHistory(path []string, frame TimeFrame) ([]Status, error) {
 	case Week:
 		min = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
 	}
-
-	log.Println("get history", path, frame.Name(),
-		"\nfrom:", string(min), "\nto  :", string(max))
-
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket(path, tx)
 		if bucket == nil {
-			return errors.New("invalid path")
+			return errPath
 		}
 		c := bucket.Cursor()
-		k, _ := c.Seek(min)
-		log.Println("first key", string(k))
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
 			if err := json.Unmarshal(v, &status); err != nil {
 				return err
 			}
-			log.Println("add to history", status.Time)
 			stats = append(stats, status)
 		}
 		return nil
@@ -165,7 +157,7 @@ func GetHistory(path []string, frame TimeFrame) ([]Status, error) {
 	return stats, err
 }
 
-func GetMonitors() ([]Monitor, error) {
+func getMonitors() ([]Monitor, error) {
 	monitors := []Monitor{}
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -181,7 +173,7 @@ func GetMonitors() ([]Monitor, error) {
 	return monitors, err
 }
 
-func GetMonitor(name string) (Monitor, error) {
+func getMonitor(name string) (Monitor, error) {
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket([]string{"monitors"}, tx)
@@ -194,19 +186,18 @@ func GetMonitor(name string) (Monitor, error) {
 	return monitor, err
 }
 
-func SaveMonitor(monitor Monitor, update bool) error {
+func saveMonitor(monitor Monitor, update bool) error {
 	bytes, err := json.Marshal(monitor)
 	if err != nil {
 		return err
 	}
 	return db.Update(func(tx *bbolt.Tx) error {
-		log.Println("checking if monitor", monitor.Name, "exists")
 		keyExists := keyExists([]string{"monitors", monitor.Name}, tx)
 		if keyExists && !update {
-			return errors.New("key exists")
+			return errKey
 		}
 		if !keyExists && update {
-			return errors.New("no suck key")
+			return errNoKey
 		}
 		bucket := tx.Bucket([]byte("monitors"))
 		if err := bucket.Put([]byte(monitor.Name), bytes); err != nil {
@@ -216,14 +207,14 @@ func SaveMonitor(monitor Monitor, update bool) error {
 	})
 }
 
-func DeleteMonitor(name string) error {
+func removeMonitor(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("monitors"))
 		return bucket.Delete([]byte(name))
 	})
 }
 
-func DeleteHistory(name string) error {
+func deleteHistory(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("history"))
 		if err := bucket.DeleteBucket([]byte(name)); err != nil {
@@ -319,7 +310,7 @@ func insertUser(user User) error {
 		bucket := tx.Bucket([]byte("users"))
 		v := bucket.Get([]byte(user.Name))
 		if v != nil {
-			return errors.New("user exists")
+			return errUser
 		}
 		bytes, err := json.Marshal(&user)
 		if err != nil {
@@ -339,7 +330,7 @@ func modifyUser(user User) error {
 		bucket := tx.Bucket([]byte("users"))
 		v := bucket.Get([]byte(user.Name))
 		if v == nil {
-			return errors.New("no such user")
+			return errNoUser
 		}
 		bytes, err := json.Marshal(&user)
 		if err != nil {
@@ -354,7 +345,7 @@ func removeUser(name string) error {
 		bucket := tx.Bucket([]byte("users"))
 		v := bucket.Get([]byte(name))
 		if v == nil {
-			return errors.New("user does not exist")
+			return errNoUser
 		}
 		return bucket.Delete([]byte(name))
 	})

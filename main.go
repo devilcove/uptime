@@ -19,9 +19,10 @@ func main() {
 		w := io.MultiWriter(os.Stderr, logFile)
 		log.SetOutput(w)
 	}
-	if err := OpenDB(); err != nil {
+	if err := openDB(); err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 	wgMonitors := &sync.WaitGroup{}
 	wgWeb := &sync.WaitGroup{}
 	quit := make(chan os.Signal, 1)
@@ -31,11 +32,8 @@ func main() {
 	ctxMonitors, cancelMonitors := context.WithCancel(context.Background())
 	startMonitors(ctxMonitors, wgMonitors)
 	ctxWeb, cancelWeb := context.WithCancel(context.Background())
-	restart := func() {
-		reset <- syscall.SIGHUP
-	}
 	wgWeb.Add(1)
-	go web(ctxWeb, wgWeb, restart)
+	go web(ctxWeb, wgWeb)
 	for {
 		select {
 		case <-quit:
@@ -44,7 +42,6 @@ func main() {
 			cancelWeb()
 			wgMonitors.Wait()
 			wgWeb.Wait()
-			db.Close()
 			return
 		case <-reset:
 			log.Println("reset monitors")
@@ -54,5 +51,4 @@ func main() {
 			startMonitors(ctxMonitors, wgMonitors)
 		}
 	}
-
 }
