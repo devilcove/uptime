@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -15,7 +16,8 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	logFile, err := os.OpenFile("uptime.log", os.O_RDWR|os.O_APPEND|os.O_CREATE, os.ModePerm)
 	if err == nil {
-		log.SetOutput(logFile)
+		w := io.MultiWriter(os.Stderr, logFile)
+		log.SetOutput(w)
 	}
 	if err := OpenDB(); err != nil {
 		log.Fatal(err)

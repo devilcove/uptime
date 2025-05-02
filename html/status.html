@@ -4,6 +4,7 @@
     <button onclick="location.href='/new'" type="button">New Monitor</button>
     <button onclick="location.href='/logs'" type="button">View Logs</button>
     <button onclick="location.href='/logout'" type="button">Logout</button>
+    <button onclick="location.href='/admin'" type="button">User Admin</button>
     <div class="divTable darkTable">
         <div class="divTableHeading">
             <div class="divTableRow">
@@ -14,7 +15,7 @@
                 <div class="divTableHead">Actions</div>
             </div>
         </div>
-        {{ range . }}
+        {{ range .Data }}
         <div class="divTableBody">
             <div class="divTableRow">
                 <div class="divTableCell"><a href="/history/{{ .Site }}/hour">{{ .Site }}</a></div>

@@ -18,7 +18,7 @@
             margin-right: auto;
         }
         div.darkTable {
-            font-family: "Comic Sans MS", cursive, sans-serif;
+            /*font-family: "Comic Sans MS", cursive, sans-serif;*/
             border: 2px solid #000000;
             background-color: #4A4A4A;
             width: 100%;
@@ -79,7 +79,7 @@
 
 <body style="background-color: #cecece;">
     {{ if (eq .Page "status") }}
-    {{template "status" .Data }}
+    {{template "status" . }}
     {{else if (eq .Page "history") }}
     {{ template "history" . }}
     {{ else if (eq .Page "new") }}
@@ -92,8 +92,23 @@
     {{ template "login" . }}
     {{ else if (eq .Page "logs") }}
     {{ template "logs" . }}
+    {{ else if (eq .Page "admin") }}
+    {{ template "admin" . }}
+    {{ else if (eq .Page "editUser") }}
+    {{ template "editUser" . }}
+    {{ else if (eq .Page "newUser") }}
+    {{ template "newUser" . }}
+    {{ else}}
+    {{ template "error"  . }}
     {{ end }}
 </body>
 
 </html>
 {{ end }}
+
+{{define "error"}}
+<div class="center">
+    <h2>Error</h2>
+    <h3>template not specified</h3>
+</div>
+{{end}}

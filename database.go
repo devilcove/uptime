@@ -235,20 +235,127 @@ func DeleteHistory(name string) error {
 }
 
 func validateUser(user User) bool {
-	var pass []byte
+	var truth User
 	if err := db.View(func(tx *bbolt.Tx) error {
-		pass = getKey([]string{"users", user.Name}, tx)
-		if pass == nil {
-			log.Println("no such user")
-			return errors.New("no such user")
+		bytes := getKey([]string{"users", user.Name}, tx)
+		if err := json.Unmarshal(bytes, &truth); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Println("validate user", err)
+		return false
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(truth.Pass), []byte(user.Pass)); err != nil {
+		log.Println("invalid pass", err)
+		return false
+	}
+	return true
+}
+
+func setPass(user User) (User, error) {
+	pass, err := bcrypt.GenerateFromPassword([]byte(user.Pass), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("genertat password", err)
+		return user, err
+	}
+	user.Pass = string(pass)
+	return user, nil
+}
+
+func checkAdmin(name string) bool {
+	var user User
+	if err := db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		value := bucket.Get([]byte(name))
+		if err := json.Unmarshal(value, &user); err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {
 		return false
 	}
-	if err := bcrypt.CompareHashAndPassword(pass, []byte(user.Pass)); err != nil {
-		log.Println("invalid pass", err)
-		return false
+	return user.Admin
+}
+
+func getUsers() []User {
+	var user User
+	var users []User
+	if err := db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		return bucket.ForEach(func(k, v []byte) error {
+			if err := json.Unmarshal(v, &user); err != nil {
+				return err
+			}
+			user.Name = string(k)
+			users = append(users, user)
+			return nil
+		})
+	}); err != nil {
+		return []User{}
 	}
-	return true
+	return users
+}
+
+func getUser(name string) User {
+	var user User
+	if err := db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		v := bucket.Get([]byte(name))
+		return json.Unmarshal(v, &user)
+	}); err != nil {
+		return User{}
+	}
+	return user
+}
+
+func insertUser(user User) error {
+	var err error
+	user, err = setPass(user)
+	if err != nil {
+		return err
+	}
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		v := bucket.Get([]byte(user.Name))
+		if v != nil {
+			return errors.New("user exists")
+		}
+		bytes, err := json.Marshal(&user)
+		if err != nil {
+			return err
+		}
+		return bucket.Put([]byte(user.Name), bytes)
+	})
+}
+
+func modifyUser(user User) error {
+	var err error
+	user, err = setPass(user)
+	if err != nil {
+		return err
+	}
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		v := bucket.Get([]byte(user.Name))
+		if v == nil {
+			return errors.New("no such user")
+		}
+		bytes, err := json.Marshal(&user)
+		if err != nil {
+			return err
+		}
+		return bucket.Put([]byte(user.Name), bytes)
+	})
+}
+
+func removeUser(name string) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("users"))
+		v := bucket.Get([]byte(name))
+		if v == nil {
+			return errors.New("user does not exist")
+		}
+		return bucket.Delete([]byte(name))
+	})
 }

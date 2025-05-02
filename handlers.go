@@ -13,7 +13,138 @@ import (
 	"syscall"
 
 	"github.com/gorilla/sessions"
+	"github.com/kr/pretty"
 )
+
+func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
+	session, err := store.Get(r, "helloworld")
+	if err != nil {
+		log.Println("session err", err)
+		http.Redirect(w, r, "/login", http.StatusUnauthorized)
+		return StatusData{}, err
+	}
+	return StatusData{
+		Admin: session.Values["admin"].(bool),
+		User:  session.Values["user"].(string),
+	}, nil
+}
+
+func admin(w http.ResponseWriter, r *http.Request) {
+	data, err := sessionData(w, r)
+	if err != nil {
+		return
+	}
+	data.Page = "admin"
+	if data.Admin {
+		users := getUsers()
+		log.Println(users)
+		for _, user := range users {
+			log.Println(user)
+			data.Data = append(data.Data, user)
+		}
+	}
+	pretty.Println(data)
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
+	return
+}
+
+func editUser(w http.ResponseWriter, r *http.Request) {
+	data, err := sessionData(w, r)
+	if err != nil {
+		return
+	}
+	name := r.PathValue("user")
+	data.Title = "Edit Password"
+	data.Page = "editUser"
+	user := getUser(name)
+	if user.Name == "" {
+		log.Println("user not found")
+		http.Error(w, "no such user", http.StatusBadRequest)
+		return
+	}
+	data.Data = append(data.Data, user)
+	pretty.Println(data)
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
+}
+
+func newUser(w http.ResponseWriter, r *http.Request) {
+	data := StatusData{
+		Title: "New User",
+		Page:  "newUser",
+	}
+	buf := &bytes.Buffer{}
+	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	buf.WriteTo(w)
+}
+
+func addUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	if err := r.ParseForm(); err != nil {
+		log.Println("parse form", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user.Name = r.FormValue("name")
+	user.Pass = r.FormValue("pass")
+	admin := r.FormValue("admin")
+	if admin == "on" {
+		user.Admin = true
+	}
+	log.Println("add user", user, admin)
+	if err := insertUser(user); err != nil {
+		log.Println("add user", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/admin", http.StatusFound)
+}
+
+func updateUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	user.Name = r.PathValue("user")
+	if err := r.ParseForm(); err != nil {
+		log.Println("parse form", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user.Pass = r.FormValue("pass")
+	admin := r.FormValue("admin")
+	if admin == "on" {
+		user.Admin = true
+	}
+	if err := modifyUser(user); err != nil {
+		log.Println("add user", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/admin", http.StatusFound)
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	user := r.PathValue("user")
+	if err := removeUser(user); err != nil {
+		log.Println("delete user", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/admin", http.StatusFound)
+}
 
 func loggout(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "helloworld")
@@ -57,6 +188,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		log.Println("session err", err)
 	}
 	session.Values["logged in"] = true
+	session.Values["user"] = user.Name
+	session.Values["admin"] = checkAdmin(user.Name)
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
@@ -78,16 +211,17 @@ func displayLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
+	data, err := sessionData(w, r)
+	if err != nil {
+		return
+	}
+	data.Title = "Uptime"
+	data.Page = "status"
 	status, err := GetKeys([]string{"status"})
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database", http.StatusInternalServerError)
 		return
-	}
-	data := StatusData{
-		Title: "Uptime",
-		Theme: "indigo",
-		Page:  "status",
 	}
 	for _, stat := range status {
 		report := Status{
@@ -304,7 +438,6 @@ func history(w http.ResponseWriter, r *http.Request) {
 	slices.Reverse(history)
 	data := StatusData{
 		Title: "History: " + site,
-		Theme: "indigo",
 		Page:  "history",
 		Site:  site,
 	}

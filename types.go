@@ -61,13 +61,15 @@ func (t TimeFrame) Name() string {
 
 type StatusData struct {
 	Title string
-	Theme string
+	User  string
+	Admin bool
 	Page  string
 	Site  string
 	Data  []any
 }
 
 type User struct {
-	Name string
-	Pass string
+	Name  string
+	Pass  string
+	Admin bool
 }
