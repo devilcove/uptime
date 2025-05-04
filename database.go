@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"go.etcd.io/bbolt"
-	berrors "go.etcd.io/bbolt/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,7 +27,6 @@ var (
 )
 
 func openDB() error {
-	var success bool
 	var err error
 	xdg, ok := os.LookupEnv("XDG_DATA_HOME")
 	if !ok {
@@ -36,22 +34,8 @@ func openDB() error {
 		xdg = filepath.Join(home, ".local/share/uptime")
 	}
 	file := filepath.Join(xdg, dbFile)
-	for range 5 {
-		db, err = bbolt.Open(file, 0o666, &bbolt.Options{Timeout: time.Second})
-		if err != nil {
-			if errors.Is(err, berrors.ErrTimeout) {
-				time.Sleep(time.Second)
-				log.Println("database timeout...trying again")
-				continue
-			} else {
-				break
-			}
-		} else {
-			success = true
-			break
-		}
-	}
-	if !success {
+	db, err = bbolt.Open(file, 0o666, &bbolt.Options{Timeout: time.Second})
+	if err != nil {
 		return err
 	}
 	log.Println("loaded db file", file)
