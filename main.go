@@ -22,7 +22,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	reset = make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, os.Interrupt)
-	signal.Notify(quit, syscall.SIGHUP)
+	signal.Notify(reset, syscall.SIGHUP)
 	ctxMonitors, cancelMonitors := context.WithCancel(context.Background())
 	startMonitors(ctxMonitors, wgMonitors)
 	ctxWeb, cancelWeb := context.WithCancel(context.Background())
