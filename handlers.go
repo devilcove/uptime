@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/sessions"
 )
@@ -190,10 +191,12 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, stat := range status {
 		report := Status{
-			Site:       stat.Site,
-			Status:     stat.Status,
-			StatusCode: stat.StatusCode,
-			Time:       stat.Time.Local(),
+			Site:         stat.Site,
+			Status:       stat.Status,
+			StatusCode:   stat.StatusCode,
+			Time:         stat.Time.Local(),
+			ResponseTime: stat.ResponseTime.Round(time.Millisecond),
+			CertExpiry:   stat.CertExpiry,
 		}
 		data.Data = append(data.Data, report)
 	}
@@ -379,10 +382,12 @@ func history(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, hist := range history {
 		report := Status{
-			Site:       hist.Site,
-			Status:     hist.Status,
-			StatusCode: hist.StatusCode,
-			Time:       hist.Time.Local(),
+			Site:         hist.Site,
+			Status:       hist.Status,
+			StatusCode:   hist.StatusCode,
+			Time:         hist.Time.Local(),
+			ResponseTime: hist.ResponseTime.Round(time.Millisecond),
+			CertExpiry:   hist.CertExpiry,
 		}
 		data.Data = append(data.Data, report)
 	}

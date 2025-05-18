@@ -79,6 +79,7 @@ func updateStatus(m *Monitor, check Checker) {
 func checkHTTP(m *Monitor) Status {
 	s := Status{
 		Site: m.Name,
+		URL:  m.URL,
 		Time: time.Now(),
 	}
 	if m.Type != HTTP {
@@ -92,13 +93,18 @@ func checkHTTP(m *Monitor) Status {
 	}
 	client := http.Client{Timeout: timeout}
 	resp, err := client.Get(m.URL)
+	s.ResponseTime = time.Since(s.Time)
 	if err != nil {
 		s.Status = err.Error()
 		return s
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	s.Status = resp.Status
 	s.StatusCode = resp.StatusCode
+	if len(resp.TLS.PeerCertificates) > 0 {
+		cert := resp.TLS.PeerCertificates[0]
+		s.CertExpiry = int(time.Until(cert.NotAfter).Hours() / 24)
+	}
 	return s
 }
 

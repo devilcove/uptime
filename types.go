@@ -7,11 +7,13 @@ type Type int
 const (
 	HTTP Type = iota
 	PING
+	TCP
 )
 
 var TypeNames = map[Type]string{
 	HTTP: "http",
 	PING: "ping",
+	TCP:  "tcp",
 }
 
 func (t Type) Name() string {
@@ -21,10 +23,13 @@ func (t Type) Name() string {
 type Checker func(*Monitor) Status
 
 type Status struct {
-	Site       string
-	Time       time.Time
-	StatusCode int
-	Status     string
+	Site         string
+	URL          string
+	Time         time.Time
+	StatusCode   int
+	Status       string
+	CertExpiry   int
+	ResponseTime time.Duration
 }
 
 type Monitor struct {
