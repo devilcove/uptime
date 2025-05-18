@@ -98,6 +98,8 @@
     {{ template "editUser" . }}
     {{ else if (eq .Page "newUser") }}
     {{ template "newUser" . }}
+    {{ else if (eq .Page "logout") }}
+    {{ template "logout" . }}
     {{ else}}
     {{ template "error"  . }}
     {{ end }}

@@ -12,8 +12,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/gorilla/sessions"
 )
 
 func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
@@ -135,7 +133,7 @@ func loggout(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
-	showTemplate(w, StatusData{})
+	showTemplate(w, StatusData{Page: "logout"})
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -153,8 +151,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthozied", http.StatusUnauthorized)
 		return
 	}
-	store = sessions.NewCookieStore([]byte("secret"))
-	store.MaxAge(120) // TODO change for production
+	store.MaxAge(300)
 	session, err := store.Get(r, "helloworld")
 	if err != nil {
 		log.Println("session err", err)

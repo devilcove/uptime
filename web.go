@@ -17,7 +17,7 @@ var f embed.FS
 
 var (
 	templates = template.Must(template.New("").ParseFS(f, "html/*"))
-	store     = sessions.NewCookieStore([]byte("secret")) // TODO change for production
+	store     *sessions.CookieStore
 )
 
 type Report struct {
@@ -29,6 +29,10 @@ type Report struct {
 
 func web(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
+	store = sessions.NewCookieStore([]byte("secret"))
+	store.MaxAge(300)
+	store.Options.HttpOnly = true
+	store.Options.SameSite = http.SameSiteStrictMode
 	log.Println("starting web server")
 
 	http.Handle("GET /admin", logger(auth(http.HandlerFunc(admin))))
