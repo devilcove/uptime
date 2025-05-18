@@ -98,7 +98,7 @@ func checkHTTP(m *Monitor) Status {
 		s.Status = err.Error()
 		return s
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close()
 	s.Status = resp.Status
 	s.StatusCode = resp.StatusCode
 	if len(resp.TLS.PeerCertificates) > 0 {
