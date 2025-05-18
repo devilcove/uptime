@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -14,11 +13,6 @@ var reset chan os.Signal
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	logFile, err := os.OpenFile("uptime.log", os.O_RDWR|os.O_APPEND|os.O_CREATE, os.ModePerm)
-	if err == nil {
-		w := io.MultiWriter(os.Stderr, logFile)
-		log.SetOutput(w)
-	}
 	if err := openDB(); err != nil {
 		log.Fatal(err)
 	}
