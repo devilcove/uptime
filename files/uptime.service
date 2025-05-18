@@ -1,0 +1,14 @@
+[Unit]
+Description=Uptime Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=mkasun
+Type=simple
+WorkingDirectory=/home/mkasun/uptime
+ExecStart=/home/mkasun/uptime/uptime
+Restart=on-success
+
+[Install]
+WantedBy=multi-user.target
