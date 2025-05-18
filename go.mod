@@ -1,6 +1,6 @@
 module github.com/devilcove/uptime
 
-go 1.24.2
+go 1.23.0
 
 require (
 	github.com/gorilla/sessions v1.4.0
