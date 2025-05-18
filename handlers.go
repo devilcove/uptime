@@ -15,7 +15,7 @@ import (
 )
 
 func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
-	session, err := store.Get(r, "helloworld")
+	session, err := store.Get(r, "devilcove-uptime")
 	if err != nil {
 		log.Println("session err", err)
 		http.Redirect(w, r, "/login", http.StatusUnauthorized)
@@ -123,7 +123,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func loggout(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "helloworld")
+	session, err := store.Get(r, "devilcove-uptime")
 	if err != nil {
 		log.Println("session err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -152,7 +152,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	store.MaxAge(300)
-	session, err := store.Get(r, "helloworld")
+	session, err := store.Get(r, "devilcove-uptime")
 	if err != nil {
 		log.Println("session err", err)
 	}

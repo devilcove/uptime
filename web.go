@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"embed"
 	"html/template"
 	"log"
@@ -29,7 +30,7 @@ type Report struct {
 
 func web(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	store = sessions.NewCookieStore([]byte("secret"))
+	store = sessions.NewCookieStore(randBytes(32))
 	store.MaxAge(300)
 	store.Options.HttpOnly = true
 	store.Options.SameSite = http.SameSiteStrictMode
@@ -71,7 +72,7 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "helloworld")
+		session, err := store.Get(r, "devilcove-uptime")
 		if err != nil {
 			log.Println("session err", err)
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
@@ -96,7 +97,7 @@ func auth(next http.Handler) http.Handler {
 
 func isAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "helloworld")
+		session, err := store.Get(r, "devilcove-uptime")
 		if err != nil {
 			log.Println("session err", err)
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
@@ -120,4 +121,13 @@ func logger(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 		log.Println(r.UserAgent(), r.RemoteAddr, r.Method, r.Host, r.URL.Path)
 	})
+}
+
+func randBytes(l int) []byte {
+	bytes := make([]byte, l)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
 }
