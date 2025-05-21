@@ -226,6 +226,9 @@ func new(w http.ResponseWriter, r *http.Request) {
 		Title: "New Monitor",
 		Page:  "new",
 	}
+	for _, notification := range getAllNotifications() {
+		data.Data = append(data.Data, notification)
+	}
 	showTemplate(w, data)
 }
 
@@ -241,12 +244,18 @@ func create(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 	}
+	for key, value := range r.Form {
+		if key == "notifications" {
+			monitor.Notifiers = append(monitor.Notifiers, value...)
+		}
+	}
+	log.Println(monitor)
 	type_, err := strconv.Atoi(r.FormValue("type"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	monitor.Type = Type(type_)
+	monitor.Type = MonitorType(type_)
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return
@@ -297,7 +306,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	monitor.Type = Type(type_)
+	monitor.Type = MonitorType(type_)
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return

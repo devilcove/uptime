@@ -100,6 +100,14 @@
     {{ template "newUser" . }}
     {{ else if (eq .Page "logout") }}
     {{ template "logout" . }}
+    {{ else if (eq .Page "notifications") }}
+    {{ template "notifications" . }}
+    {{ else if (eq .Page "newNotification") }}
+    {{ template "newNotification" . }}
+    {{ else if (eq .Page "deleteNotification") }}
+    {{ template "deleteNotification" . }}
+    {{ else if (eq .Page "editSlackNotification") }}
+    {{ template "editSlackNotification" . }}
     {{ else}}
     {{ template "error"  . }}
     {{ end }}

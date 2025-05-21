@@ -77,6 +77,11 @@
                         <input name="type" type="radio" value=1 checked="checked" /> Ping <br />
                         {{ end }}
                     </td>
+                    <td>
+                        {{ range .Notifiers }}
+                        <input checked="checked" name="notifications" type="checkbox" value="{{.Name}}">{{.Name}}
+                        {{ end }}
+                    </td>
                 </tr>
             </table>
             <br>

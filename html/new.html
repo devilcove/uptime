@@ -29,8 +29,16 @@
                 </tr>
                 <tr>
                     <td><label>Type</label></td>
-                    <td><input checked="checked" name="type" type="radio" value=0> Website>
+                    <td><input checked="checked" name="type" type="radio" value=0> Website
                     <input name="type" type="radio" value=1 /> Ping </td>
+                </tr>
+                <tr>
+                    <td>Notifications</td>
+                    <td>
+                        {{ range .Data }}
+                        <input type="checkbox" name="notifications" value="{{ .Name }}"> {{.Name}}
+                        {{ end }}
+                    </td>
                 </tr>
             </table>
             <br>

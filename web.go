@@ -40,21 +40,32 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 	http.Handle("GET /user", logger(auth(isAdmin(http.HandlerFunc(newUser)))))
 	http.Handle("GET /user/{user}", logger(auth(http.HandlerFunc(editUser))))
 	http.Handle("POST /user/delete/{user}", logger(auth(http.HandlerFunc(deleteUser))))
-
 	http.Handle("POST /user", logger(http.HandlerFunc(addUser)))
 	http.Handle("POST /user/{user}", logger(http.HandlerFunc(updateUser)))
+
 	http.Handle("/logout", logger(http.HandlerFunc(loggout)))
 	http.Handle("GET /login", logger(http.HandlerFunc(displayLogin)))
 	http.Handle("POST /login", logger(http.HandlerFunc(login)))
 	http.Handle("/{$}", logger(auth(http.HandlerFunc(mainPage))))
+
 	http.Handle("/logs", logger(auth(http.HandlerFunc(logs))))
+
 	http.Handle("GET /new", logger(auth(http.HandlerFunc(new))))
 	http.Handle("POST /new", logger(auth(http.HandlerFunc(create))))
 	http.Handle("GET /delete/{site}", logger(auth(http.HandlerFunc(deleteSite))))
 	http.Handle("POST /delete/{site}", logger(auth(http.HandlerFunc(deleteMonitor))))
 	http.Handle("GET /edit/{site}", logger(auth(http.HandlerFunc(edit))))
 	http.Handle("POST /edit/{site}", logger(auth(http.HandlerFunc(editMonitor))))
+
 	http.Handle("/history/{site}/{duration}", logger(auth(http.HandlerFunc(history))))
+
+	http.Handle("GET /notifications", logger(auth(http.HandlerFunc(notifications))))
+	http.Handle("GET /notify", logger(auth(http.HandlerFunc(notify))))
+	http.Handle("POST /notify", logger(auth(http.HandlerFunc(createNewNotify))))
+	http.Handle("GET /notify/delete/{notify}", logger(auth(http.HandlerFunc(displayDeleteNotify))))
+	http.Handle("POST /notify/delete/{notify}", logger(auth(http.HandlerFunc(deleteNotify))))
+	http.Handle("GET /notify/edit/{notify}", logger(auth(http.HandlerFunc(displayEditNotify))))
+	http.Handle("POST /notify/edit/{notify}", logger(auth(http.HandlerFunc(editNotify))))
 
 	server := http.Server{Addr: ":8090", ReadHeaderTimeout: time.Second}
 	go func() {
