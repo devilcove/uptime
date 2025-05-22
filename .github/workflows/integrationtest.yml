@@ -48,6 +48,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
+      - name: templates
+        run: |
+          go tool templ generate
       - name:  lint
         uses: golangci/golangci-lint-action@v8
         with:
