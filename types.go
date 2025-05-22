@@ -2,8 +2,10 @@ package main
 
 import "time"
 
-type MonitorType int
-type NotifyType int
+type (
+	MonitorType int
+	NotifyType  int
+)
 
 const (
 	HTTP MonitorType = iota

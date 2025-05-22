@@ -27,7 +27,7 @@ type Notification struct {
 	Name    string
 	Type    string
 	Checked bool
-	//slack
+	// slack
 	Token   string
 	Channel string
 }

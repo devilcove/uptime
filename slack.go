@@ -32,7 +32,8 @@ func (slack *SlackNotifier) Send(data SlackMessage) error {
 	req.Header.Set("Authorization", "Bearer "+slack.Token)
 	req.Header.Set("Content-Type", "application/json")
 	client := http.Client{Timeout: time.Second}
-	_, err = client.Do(req)
+	resp, err := client.Do(req)
+	resp.Body.Close()
 	return err
 }
 

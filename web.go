@@ -11,9 +11,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var (
-	store *sessions.CookieStore
-)
+var store *sessions.CookieStore
 
 type Report struct {
 	Site   string
@@ -100,26 +98,26 @@ func auth(next http.Handler) http.Handler {
 	})
 }
 
-func isAdmin(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "devilcove-uptime")
-		if err != nil {
-			log.Println("session err", err)
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		}
-		isAdmin := session.Values["admin"]
-		if x, ok := isAdmin.(bool); !ok || !x {
-			log.Println("not admin")
-			http.Error(w, "admin privileges are required", http.StatusUnauthorized)
-			return
-		}
-		if err := session.Save(r, w); err != nil {
-			log.Println("save session", err)
-		}
-		next.ServeHTTP(w, r)
-	})
-}
+// func isAdmin(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		session, err := store.Get(r, "devilcove-uptime")
+//		if err != nil {
+//			log.Println("session err", err)
+//			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+//			return
+//		}
+//		isAdmin := session.Values["admin"]
+//		if x, ok := isAdmin.(bool); !ok || !x {
+//			log.Println("not admin")
+//			http.Error(w, "admin privileges are required", http.StatusUnauthorized)
+//			return
+//		}
+//		if err := session.Save(r, w); err != nil {
+//			log.Println("save session", err)
+//		}
+//		next.ServeHTTP(w, r)
+//	})
+// }
 
 func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,10 +17,10 @@ import (
 )
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
-	//data, err := sessionData(w, r)
-	//if err != nil {
+	// data, err := sessionData(w, r)
+	// if err != nil {
 	//	return
-	//}
+	// }
 	title := "Uptime"
 
 	status, err := getKeys([]string{"status"})
@@ -33,7 +32,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	rows := []templates.StatusRows{}
 	for _, stat := range status {
 		buf := &bytes.Buffer{}
-		templates.LinkButton("Delete", fmt.Sprintf("/edit/%s", stat.Site)).Render(context.Background(), buf)
+		templates.LinkButton("Delete", "/edit/"+stat.Site).Render(context.Background(), buf)
 
 		row := templates.StatusRows{
 			Site:         templates.Link(templ.SafeURL("history/"+stat.Site+"/hour"), stat.Site),
@@ -43,8 +42,8 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 			ResponseTime: stat.ResponseTime.Round(time.Millisecond).String(),
 			CertExpiry:   strconv.Itoa(stat.CertExpiry),
 		}
-		row.Action = append(row.Action, templates.LinkButton("Edit", fmt.Sprintf("/monitor/edit/%s", stat.Site)))
-		row.Action = append(row.Action, templates.LinkButton("Delete", fmt.Sprintf("monitor/delete/%s", stat.Site)))
+		row.Action = append(row.Action, templates.LinkButton("Edit", "/monitor/edit/"+stat.Site))
+		row.Action = append(row.Action, templates.LinkButton("Delete", "monitor/delete/"+stat.Site))
 		rows = append(rows, row)
 	}
 
@@ -113,16 +112,15 @@ func admin(w http.ResponseWriter, r *http.Request) {
 		for _, login := range logins {
 			user := templates.User{}
 			user.Name = login.Name
-			user.Actions = append(user.Actions, templates.LinkButton("Edit", fmt.Sprintf("/user/%s", login.Name)))
+			user.Actions = append(user.Actions, templates.LinkButton("Edit", "/user/"+login.Name))
 			user.Actions = append(user.Actions, templates.FormButton("Delete",
-				templ.SafeURL(fmt.Sprintf("/user/delete/%s", login.Name))))
+				templ.SafeURL("/user/delete/"+login.Name)))
 			users = append(users, user)
 		}
-
 	} else {
 		user := templates.User{}
 		user.Name = data.User
-		user.Actions = append(user.Actions, templates.LinkButton("Edit", fmt.Sprintf("/users/edit/%s", data.User)))
+		user.Actions = append(user.Actions, templates.LinkButton("Edit", "/users/edit/"+data.User))
 		users = append(users, user)
 	}
 	components := []templ.Component{
@@ -317,9 +315,5 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		}
 		data = append(data, lines[i])
 	}
-	//components := []templ.Component{
-	//templates.ShowLogs(data),
-	//}
-	//templates.Layout("Delete Notification", components).Render(context.Background(), w)
 	templates.ShowLogs(data).Render(context.Background(), w)
 }

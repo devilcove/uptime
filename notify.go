@@ -71,7 +71,7 @@ func editSlackNotification(w http.ResponseWriter, r *http.Request) {
 		Channel: r.FormValue("channel"),
 	}
 	if err := updateNotify(Slack, notification); err != nil {
-		log.Println("update notificaton", err)
+		log.Println("update notification", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
