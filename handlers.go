@@ -1,17 +1,13 @@
 package main
 
 import (
-	"bytes"
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"slices"
 	"strconv"
-	"strings"
 	"syscall"
-	"time"
 )
 
 func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
@@ -25,48 +21,6 @@ func sessionData(w http.ResponseWriter, r *http.Request) (StatusData, error) {
 		Admin: session.Values["admin"].(bool),
 		User:  session.Values["user"].(string),
 	}, nil
-}
-
-func admin(w http.ResponseWriter, r *http.Request) {
-	data, err := sessionData(w, r)
-	if err != nil {
-		return
-	}
-	data.Page = "admin"
-	if data.Admin {
-		users := getUsers()
-		for _, user := range users {
-			log.Println(user)
-			data.Data = append(data.Data, user)
-		}
-	}
-	showTemplate(w, data)
-}
-
-func editUser(w http.ResponseWriter, r *http.Request) {
-	data, err := sessionData(w, r)
-	if err != nil {
-		return
-	}
-	name := r.PathValue("user")
-	data.Title = "Edit Password"
-	data.Page = "editUser"
-	user := getUser(name)
-	if user.Name == "" {
-		log.Println("user not found")
-		http.Error(w, "no such user", http.StatusBadRequest)
-		return
-	}
-	data.Data = append(data.Data, user)
-	showTemplate(w, data)
-}
-
-func newUser(w http.ResponseWriter, r *http.Request) {
-	data := StatusData{
-		Title: "New User",
-		Page:  "newUser",
-	}
-	showTemplate(w, data)
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
@@ -122,20 +76,6 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin", http.StatusFound)
 }
 
-func loggout(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "devilcove-uptime")
-	if err != nil {
-		log.Println("session err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	store.MaxAge(-1)
-	if err := session.Save(r, w); err != nil {
-		log.Println("session save", err)
-	}
-	showTemplate(w, StatusData{Page: "logout"})
-}
-
 func login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Println("parse form", err)
@@ -163,73 +103,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 		log.Println("session save", err)
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func displayLogin(w http.ResponseWriter, r *http.Request) {
-	data := StatusData{
-		Title: "Login",
-		Page:  "login",
-	}
-	showTemplate(w, data)
-}
-
-func mainPage(w http.ResponseWriter, r *http.Request) {
-	data, err := sessionData(w, r)
-	if err != nil {
-		return
-	}
-	data.Title = "Uptime"
-	data.Page = "status"
-	status, err := getKeys([]string{"status"})
-	if err != nil {
-		log.Println("get status", err)
-		http.Error(w, "unable to access database", http.StatusInternalServerError)
-		return
-	}
-	for _, stat := range status {
-		report := Status{
-			Site:         stat.Site,
-			Status:       stat.Status,
-			StatusCode:   stat.StatusCode,
-			Time:         stat.Time.Local(),
-			ResponseTime: stat.ResponseTime.Round(time.Millisecond),
-			CertExpiry:   stat.CertExpiry,
-		}
-		data.Data = append(data.Data, report)
-	}
-	showTemplate(w, data)
-}
-
-func logs(w http.ResponseWriter, r *http.Request) {
-	logs, err := os.ReadFile("uptime.log")
-	if err != nil {
-		log.Println("get logs", err)
-		http.Error(w, "unable to retrieve logs", http.StatusInternalServerError)
-		return
-	}
-	data := StatusData{
-		Title: "Logs",
-		Page:  "logs",
-	}
-	lines := strings.Split(string(logs), "\n")
-	for i := len(lines) - 1; i > len(lines)-200; i-- {
-		if i < 0 {
-			break
-		}
-		data.Data = append(data.Data, lines[i])
-	}
-	showTemplate(w, data)
-}
-
-func new(w http.ResponseWriter, r *http.Request) {
-	data := StatusData{
-		Title: "New Monitor",
-		Page:  "new",
-	}
-	for _, notification := range getAllNotifications() {
-		data.Data = append(data.Data, notification)
-	}
-	showTemplate(w, data)
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
@@ -273,22 +146,6 @@ func create(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func edit(w http.ResponseWriter, r *http.Request) {
-	site := r.PathValue("site")
-	monitor, err := getMonitor(site)
-	if err != nil {
-		log.Println("get monitor", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-	data := StatusData{
-		Title: "Edit Monitor",
-		Page:  "edit",
-		Site:  site,
-	}
-	data.Data = append(data.Data, monitor)
-	showTemplate(w, data)
-}
-
 func editMonitor(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Println("parse form", err)
@@ -306,6 +163,11 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	for key, value := range r.Form {
+		if key == "notifications" {
+			monitor.Notifiers = append(monitor.Notifiers, value...)
+		}
+	}
 	monitor.Type = MonitorType(type_)
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
@@ -322,18 +184,6 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	reset <- syscall.SIGHUP
 	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func deleteSite(w http.ResponseWriter, r *http.Request) {
-	site := r.PathValue("site")
-	log.Println("delete", site)
-	data := StatusData{
-		Title: "Delete Monitor",
-		Page:  "delete",
-		Site:  site,
-	}
-	data.Data = append(data.Data, site)
-	showTemplate(w, data)
 }
 
 func deleteMonitor(w http.ResponseWriter, r *http.Request) {
@@ -359,48 +209,6 @@ func deleteMonitor(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func history(w http.ResponseWriter, r *http.Request) {
-	site := r.PathValue("site")
-	duration := r.PathValue("duration")
-	var timeFrame TimeFrame
-	switch duration {
-	case "year":
-		timeFrame = Year
-	case "month":
-		timeFrame = Month
-	case "week":
-		timeFrame = Week
-	case "day":
-		timeFrame = Day
-	default:
-		timeFrame = Hour
-	}
-	history, err := getHistory([]string{"history", site}, timeFrame)
-	if err != nil {
-		log.Println("get status", err)
-		http.Error(w, "unable to access database: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	slices.Reverse(history)
-	data := StatusData{
-		Title: "History: " + site,
-		Page:  "history",
-		Site:  site,
-	}
-	for _, hist := range history {
-		report := Status{
-			Site:         hist.Site,
-			Status:       hist.Status,
-			StatusCode:   hist.StatusCode,
-			Time:         hist.Time.Local(),
-			ResponseTime: hist.ResponseTime.Round(time.Millisecond),
-			CertExpiry:   hist.CertExpiry,
-		}
-		data.Data = append(data.Data, report)
-	}
-	showTemplate(w, data)
-}
-
 func validateURL(s string) bool {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -416,14 +224,40 @@ func validateURL(s string) bool {
 	return true
 }
 
-func showTemplate(w http.ResponseWriter, data StatusData) {
-	buf := &bytes.Buffer{}
-	if err := templates.ExecuteTemplate(buf, "main", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
+func testNotification(w http.ResponseWriter, r *http.Request) {
+	n := r.PathValue("notify")
+	kind, notification, err := getNotify(n)
+	if err != nil {
+		log.Println("could not retrieve notification", n, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if _, err := buf.WriteTo(w); err != nil {
-		log.Println(err)
+	switch kind {
+	case Slack:
+		var slack SlackNotifier
+		if err := json.Unmarshal(notification, &slack); err != nil {
+			log.Println("unmarshal slack notification", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		data := SlackMessage{
+			Text: "Test Message",
+			Attachments: []Attachment{
+				{
+					Pretext: "Pretext",
+					Text:    "first message",
+				},
+				{
+					Pretext: "Pretext2",
+					Text:    "second messge",
+				},
+			},
+		}
+		if err := slack.Send(data); err != nil {
+			log.Println("send slack message", err)
+			http.Error(w, "error sending slack message"+err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte("slack message sent successfully"))
 	}
 }

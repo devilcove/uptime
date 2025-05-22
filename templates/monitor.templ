@@ -1,0 +1,212 @@
+package templates
+
+import (
+	"fmt"
+	"slices"
+)
+
+templ NewMonitor(notifications []Notification) {
+	<h2>Create New Monitor</h2>
+	<form action="/monitor/new" method="post">
+		<table class="center">
+			<tr>
+				<td><label for="name">Name</label></td>
+				<td><input name="name" type="text" size="60"/></td>
+			</tr>
+			<tr>
+				<td><label for="name">URL </label></td>
+				<td><input name="url" type="text" size="60"/> <br/></td>
+			</tr>
+			<tr>
+				<td><label>Frequency</label></td>
+				<td>
+					<input checked="checked" name="freq" type="radio" value="1m"/> 1 Minute
+					<input name="freq" type="radio" value="5m"/> 5 Minutes
+					<input name="freq" type="radio" value="30m"/> 30 Minutes
+					<input name="freq" type="radio" value="60m"/> 60 Minutes
+				</td>
+			</tr>
+			<tr>
+				<td><label>Timeout</label></td>
+				<td>
+					<input name="timeout" type="radio" value="1s"/> 1 Second
+					<input name="timeout" type="radio" value="2s" checked="checked"/> 2 Seconds
+					<input name="timeout" type="radio" value="5s"/> 5 Seconds
+					<input name="timeout" type="radio" value="10s"/> 10 Seconds 
+				</td>
+			</tr>
+			<tr>
+				<td><label>Type</label></td>
+				<td>
+					<input checked="checked" name="type" type="radio" value="0"/> Website
+					<input name="type" type="radio" value="1"/> Ping 
+				</td>
+			</tr>
+			<tr>
+				<td>Notifications</td>
+				<td>
+					for _, n := range notifications {
+						<input type="checkbox" name="notifications" value={ n.Name }/> { n.Name }
+					}
+				</td>
+			</tr>
+		</table>
+		<br/>
+		@LinkButton("Cancel", "/")
+		@SubmitButton("Create")
+	</form>
+}
+
+templ DeleteMonitor(site string) {
+	<h2>Delete monitor { site }, Are you sure?</h2>
+	<form action={ templ.SafeURL(fmt.Sprintf("/monitor/delete/%s", site)) } method="post">
+		<input type="checkbox" name="history" value="history"/>
+		<label for="history">Also delete history</label>
+		<br/>
+		<br/>
+		@LinkButton("Cancel", "/")
+		@SubmitButton("Delete")
+	</form>
+}
+
+templ EditMonitor(site Monitor, notifications []Notification) {
+	<h2>Edit Monitor</h2>
+	<form action={ templ.SafeURL("/monitor/edit/" + site.Name) } method="post">
+		<table class="center">
+			<tr>
+				<td><label for="name">Name</label></td>
+				<td><input name="name" type="text" size="60" value={ site.Name }/></td>
+			</tr>
+			<tr>
+				<td><label for="name">URL </label></td>
+				<td><input name="url" type="text" size="60" value={ site.URL }/> <br/></td>
+			</tr>
+			<tr>
+				<td><label>Frequency</label></td>
+				<td>
+					switch site.Freq {
+						case "1m":
+							<input checked="checked" name="freq" type="radio" value="1m"/> 1 Minute
+							<input name="freq" type="radio" value="5m"/> 5 Minutes
+							<input name="freq" type="radio" value="30m"/> 30 Minutes
+							<input name="freq" type="radio" value="60m"/> 60 Minutes
+						case "5m":
+							<input name="freq" type="radio" value="1m"/> 1 Minute
+							<input checked="checked" name="freq" type="radio" value="5m"/> 5 Minutes
+							<input name="freq" type="radio" value="30m"/> 30 Minutes
+							<input name="freq" type="radio" value="60m"/> 60 Minutes
+						case "30m":
+							<input name="freq" type="radio" value="1m"/> 1 Minute
+							<input name="freq" type="radio" value="5m"/> 5 Minutes
+							<input checked="checked" name="freq" type="radio" value="30m"/> 30 Minutes
+							<input name="freq" type="radio" value="60m"/> 60 Minutes
+						case "60m":
+							<input name="freq" type="radio" value="1m"/> 1 Minute
+							<input name="freq" type="radio" value="5m"/> 5 Minutes
+							<input name="freq" type="radio" value="30m"/> 30 Minutes
+							<input checked="checked" name="freq" type="radio" value="60m"/> 60 Minutes
+					}
+				</td>
+			</tr>
+			<tr>
+				<td><label>Timeout</label></td>
+				<td>
+					switch site.Timeout {
+						case "1s":
+							<input name="timeout" type="radio" value="1s" checked="checked"/> 1 Second
+							<input name="timeout" type="radio" value="2s"/> 2 Seconds
+							<input name="timeout" type="radio" value="5s"/> 5 Seconds
+							<input name="timeout" type="radio" value="10s"/> 10 Seconds 
+							<br/>
+						case "2s":
+							<input name="timeout" type="radio" value="1s"/> 1 Second
+							<input name="timeout" type="radio" value="2s" checked="checked"/> 2 Seconds
+							<input name="timeout" type="radio" value="5s"/> 5 Seconds
+							<input name="timeout" type="radio" value="10s"/> 10 Seconds 
+							<br/>
+						case "5s":
+							<input name="timeout" type="radio" value="1s"/> 1 Second
+							<input name="timeout" type="radio" value="2s"/> 2 Seconds
+							<input name="timeout" type="radio" value="5s" checked="checked"/> 5 Seconds
+							<input name="timeout" type="radio" value="10s"/> 10 Seconds 
+							<br/>
+						case "10s":
+							<input name="timeout" type="radio" value="1s"/> 1 Second
+							<input name="timeout" type="radio" value="2s"/> 2 Seconds
+							<input name="timeout" type="radio" value="5s"/> 5 Seconds
+							<input name="timeout" type="radio" value="10s" checked="checked"/> 10 Seconds 
+							<br/>
+					}
+				</td>
+			</tr>
+			<tr>
+				<td><label>Type</label></td>
+				<td>
+					switch site.Type {
+						case "http":
+							<input checked="checked" name="type" type="radio" value="0"/> Website
+							<input name="type" type="radio" value="1"/> Ping
+						case "ping":
+							<input name="type" type="radio" value="0"/> Website
+							<input checked="checked" name="type" type="radio" value="1"/> Ping
+					}
+				</td>
+			</tr>
+			<tr>
+				<td>Notifications</td>
+				<td>
+					for _, n := range notifications {
+						if slices.Contains(site.Notifications, n.Name) {
+							<input checked="checked" type="checkbox" name="notifications" value={ n.Name }/> { n.Name }
+						} else {
+							<input type="checkbox" name="notifications" value={ n.Name }/> { n.Name }
+						}
+					}
+				</td>
+			</tr>
+		</table>
+		<br/>
+		@LinkButton("Cancel", "/")
+		@SubmitButton("Edit")
+	</form>
+}
+
+templ ShowHistory(site string, history []History) {
+	<h1>Uptime History</h1>
+	<div>
+		@LinkButton("Hour", fmt.Sprintf("/history/%s/hour", site))
+		@LinkButton("Day", fmt.Sprintf("/history/%s/day", site))
+		@LinkButton("Week", fmt.Sprintf("/history/%s/week", site))
+		@LinkButton("Month", fmt.Sprintf("/history/%s/month", site))
+        @LinkButton("Home", "/")
+	</div>
+	<div>
+		if history == nil {
+			<p>No data for time period</p>
+		}
+	</div>
+	<div class="divTable darkTable">
+		<div class="divTableHeading">
+			<div class="divTableRow">
+				<div class="divTableHead">Site</div>
+				<div class="divTableHead">Status</div>
+				<div class="divTableHead">Code</div>
+				<div class="divTableHead">Time</div>
+				<div class="divTableHead">ResponseTime</div>
+				<div class="divTableHead">CertExpiry</div>
+			</div>
+		</div>
+		for _, h := range history {
+			<div class="divTableBody">
+				<div class="divTableRow">
+					<div class="divTableCell">{ h.Site }</div>
+					<div class="divTableCell">{ h.Status }</div>
+					<div class="divTableCell">{ h.StatusCode }</div>
+					<div class="divTableCell">{ h.Time }</div>
+					<div class="divTableCell">{ h.ResponseTime }</div>
+					<div class="divTableCell">{ h.CertExpiry }</div>
+				</div>
+			</div>
+		}
+	</div>
+}

@@ -1,0 +1,185 @@
+package templates
+
+import "fmt"
+
+templ Layout(title string, contents []templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<title>{ title }</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<style>
+        a {
+            color: inherit;
+            text-align: center;
+            display: inline-block;
+        }
+        .center {
+            text-align: center;
+            background-color: #cecece;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        div.darkTable {
+            /*font-family: "Comic Sans MS", cursive, sans-serif;*/
+            border: 2px solid #000000;
+            background-color: #4A4A4A;
+            width: 100%;
+            height: 50px;
+            text-align: center;
+            border-collapse: collapse;
+        }
+        .divTable.darkTable .divTableCell,
+        .divTable.darkTable .divTableHead {
+            border: 1px solid #4A4A4A;
+            padding: 3px 2px;
+        }
+        .divTable.darkTable .divTableBody .divTableCell {
+            font-size: 13px;
+            color: #E6E6E6;
+        }
+        .divTable.darkTable .divTableHeading {
+            background: #000000;
+            border-bottom: 3px solid #000000;
+        }
+        .divTable.darkTable .divTableHeading .divTableHead {
+            font-size: 15px;
+            font-weight: bold;
+            color: #E6E6E6;
+            text-align: center;
+            border-left: 2px solid #4A4A4A;
+        }
+        .divTable.darkTable .divTableHeading .divTableHead:first-child {
+            border-left: none;
+        }
+        .darkTable .tableFootStyle {
+            font-size: 12px;
+        }
+        .divTable {
+            display: table;
+        }
+        .divTableRow {
+            display: table-row;
+        }
+        .divTableHeading {
+            display: table-header-group;
+        }
+        .divTableCell,
+        .divTableHead {
+            display: table-cell;
+        }
+        .divTableHeading {
+            display: table-header-group;
+        }
+        .divTableFoot {
+            display: table-footer-group;
+        }
+        .divTableBody {
+            display: table-row-group;
+        }
+    </style>
+		</head>
+		<body style="background-color: #cecece;">
+			<div class="center">
+				for i := range contents {
+					@contents[i]
+				}
+			</div>
+		</body>
+	</html>
+}
+
+templ Login() {
+	<form action="/login" method="post">
+		<table class="center">
+			<tr></tr>
+			<tr>
+				<td><label for="name">Name</label> </td>
+				<td><input name="name" type="test" size="40"/></td>
+			</tr>
+			<tr>
+				<td><label for="pass">Pass</label></td>
+				<td><input name="pass" type="password" size="40"/></td>
+			</tr>
+		</table>
+		@SubmitButton("Login")
+	</form>
+}
+
+templ Logout() {
+	<h2>GoodBye</h2>
+	<br/>
+	@LinkButton("Home", "/")
+}
+
+templ Admin(admin bool, users []User) {
+	<h2>Admin Page</h2>
+	if admin {
+        @DialogButton("Create New User", "new")
+	}
+	@LinkButton("Home", "/")
+	<br/>
+	<br/>
+    <table class="center">
+	for _, user := range users {
+        <tr>
+		    <td><label>{ user.Name }</label></td>
+		for i :=range user.Actions {
+			<td>@user.Actions[i]</td>
+		}
+        </tr>
+	}
+    </table>
+    <dialog id="new">
+    <h2>New User</h2>
+    <form action="/user" method="post">
+        <label for="name">Name</label>
+        <input name="name" type="text" size="40"/>
+        <br>
+        <label for="pass">Pass</label>
+        <input for="pass" type="password" size="40"/>
+        <br>
+        <label for="admin">Admin</label>
+        <input type=checkbox name="admin"/>
+        <br/><br/>
+        <button type="button" onclick="document.getElementById('new').close()">Cancel</button>
+        @SubmitButton("Create")
+    </form>
+    </dialog>
+}
+
+templ EditUser(user User, admin bool) {
+    <h2>Edit User {user.Name}</h2>
+    <form action={ templ.SafeURL(fmt.Sprintf("/user/%s", user.Name))} method="post">
+        <table class="center">
+            <tr>
+                <td><label for="pass">Pass</label></td>
+                <td><input name="pass" type="password" size="40"/></td>
+            </tr>
+            if admin {
+                <tr>
+                    <td><label for="admin">Admin</label></td>
+                    if user.Admin {
+                        <td><input type="checkbox" name="admin" checked="true" /> </td>
+                    } else {
+                        <td><input type="checkbox" name="admin"/></td>
+                    }
+                </tr>
+            }
+        </table>
+        @LinkButton("Cancel", "/admin")
+        @SubmitButton("Edit")
+    </form>
+}
+
+templ ShowLogs(lines []string){
+    @LinkButton("Refresh", "/logs")
+    @LinkButton("Home", "/")
+    <div>
+    for _, line := range lines {
+        {line}<br>
+    }
+    </div>
+}
+
+

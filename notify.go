@@ -1,30 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"syscall"
 )
-
-func notifications(w http.ResponseWriter, r *http.Request) {
-	data := StatusData{
-		Title: "Notifications",
-		Page:  "notifications",
-	}
-	for _, notification := range getAllNotifications() {
-		data.Data = append(data.Data, notification)
-	}
-	log.Println(data)
-	showTemplate(w, data)
-}
-func notify(w http.ResponseWriter, r *http.Request) {
-	data := StatusData{
-		Title: "New Notifier",
-		Page:  "newNotification",
-	}
-	showTemplate(w, data)
-}
 
 func createNewNotify(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -52,18 +32,6 @@ func createNewNotify(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func displayDeleteNotify(w http.ResponseWriter, r *http.Request) {
-	notifier := r.PathValue("notify")
-	log.Println("delete notification", notifier)
-	data := StatusData{
-		Title: "Delete Notifier",
-		Page:  "deleteNotification",
-		Site:  notifier,
-	}
-	data.Data = append(data.Data, notifier)
-	showTemplate(w, data)
-}
-
 func deleteNotify(w http.ResponseWriter, r *http.Request) {
 	notify := r.PathValue("notify")
 	if err := r.ParseForm(); err != nil {
@@ -78,31 +46,6 @@ func deleteNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-func displayEditNotify(w http.ResponseWriter, r *http.Request) {
-	notify := r.PathValue("notify")
-	notifyType, notification, err := getNotify(notify)
-	if err != nil {
-		log.Println("get notifier", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	data := StatusData{
-		Title: "Edit Notifier",
-	}
-	switch notifyType {
-	case Slack:
-		var n SlackNotifier
-		if err := json.Unmarshal(notification, &n); err != nil {
-			log.Println("get notifier", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		data.Page = "editSlackNotification"
-		data.Data = append(data.Data, n)
-	}
-	showTemplate(w, data)
 }
 
 func editNotify(w http.ResponseWriter, r *http.Request) {
