@@ -22,6 +22,7 @@ jobs:
       - name: Build
         run: |
           go version
+          go tool templ generate
           CGO_ENABLED=0 go build -v  . 
   
   tests:
@@ -35,6 +36,7 @@ jobs:
           go-version-file: ./go.mod
       - name: run tests
         run: |
+          go tool templ generate
           go test ./... -v
   
   lint:
