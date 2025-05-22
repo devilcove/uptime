@@ -108,7 +108,7 @@ func checkHTTP(m *Monitor) Status {
 	return s
 }
 
-func getChecker(t Type) Checker {
+func getChecker(t MonitorType) Checker {
 	switch t { //nolint:exhaustive
 	case HTTP:
 		return checkHTTP

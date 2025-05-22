@@ -2,3 +2,5 @@
 *.log
 .config
 uptime
+*_templ.go
+TODO

@@ -1,0 +1,100 @@
+package templates
+
+import "fmt"
+
+templ ShowNotifications(notifications []Notification) {
+	<h1>Notifications</h1>
+	@LinkButton("New Notification", "/notifications/new")
+	@LinkButton("Home", "/")
+	<div class="divTable darkTable">
+		<div class="divTableHeading">
+			<div class="divTableRow">
+				<div class="divTableHead">Name</div>
+				<div class="divTableHead">Type</div>
+				<div class="divTableHead">Actions</div>
+			</div>
+		</div>
+		for _, n := range notifications {
+			<div class="divTableBody">
+				<div class="divTableRow">
+					<div class="divTableCell">{ n.Name }</div>
+					<div class="divTableCell">{ n.Type }</div>
+					<div class="divTableCell">
+						@LinkButton("Edit", fmt.Sprintf("/notifications/edit/%s", n.Name))
+						@LinkButton("Delete", fmt.Sprintf("/notifications/delete/%s", n.Name))
+						@LinkButton("Test", fmt.Sprintf("/notifications/test/%s", n.Name))
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ EditSlackNotification(notification Notification) {
+	<h1>Edit Notication</h1>
+	<h2>Notification Name:  { notification.Name }</h2>
+	<form action={ templ.SafeURL("/notifications/edit/" + notification.Name) } method="post">
+		<label for="token">Token</label>
+		<input name="token" type="text" size="60" value={ notification.Token }/>
+		<br/>
+		<label for="channel">Channel</label>
+		<input name="channel" type="text" size="60" value={ notification.Channel }/>
+		<br/>
+		<input name="type" type="hidden" value="slack"/>
+		@LinkButton("Cancel", "/notifications")
+		@SubmitButton("Edit")
+	</form>
+}
+
+templ DeleteNotification(name string) {
+	<h1>Delete Notification { name }</h1>
+	<form action={ templ.SafeURL("/notifications/delete/" + name) } method="post">
+		@LinkButton("Cancel", "/notifications")
+		@SubmitButton("Delete")
+	</form>
+}
+
+script displayExtra(id string) {
+        document.getElementById('slack').style.display = "none";
+        document.getElementById('email').style.display = "none";
+        document.getElementById('discord').style.display = "none";
+        document.getElementById('sms').style.display = "none";
+        document.getElementById(id).style.display = "block";
+}
+
+templ NewNotification() {
+	<h1>New Notificaton</h1>
+	<form action="/notification/new" method="post">
+		<label for="name">Name</label>
+		<input name="name" type="text" size="60"/>
+		<br/>
+		<label>Notification Type</label>
+		<input type="radio" name="type" value="slack" onclick={ displayExtra("slack") }/>Slack
+		<input type="radio" name="type" value="discord" onclick={ displayExtra("discord") }/>Discord
+		<input type="radio" name="type" value="email" onclick={ displayExtra("email") }/>Email
+		<input type="radio" name="type" value="sms" onclick={ displayExtra("sms") }/>SMS
+		<br/>
+		<div id="slack" style="display:none">
+			Slack Data
+			<br/>
+			<label for="token">Token</label>
+			<input name="token" type="text" size="60"/>
+			<br/>
+			<label for="channel">Channel</label>
+			<input name="channel" type="text" size="60"/>
+			<br/>
+		</div>
+		<div id="discord" style="display:none">
+			discord: not implemented
+		</div>
+		<div id="email" style="display:none">
+			email: not implemented
+		</div>
+		<div id="sms" style="display:none">
+			sms: not implemented
+		</div>
+		<br/>
+		@LinkButton("Cancel", "/notifications")
+		@SubmitButton("Create")
+	</form>
+}
