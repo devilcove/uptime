@@ -11,11 +11,15 @@ templ NewMonitor(notifications []Notification) {
 		<table class="center">
 			<tr>
 				<td><label for="name">Name</label></td>
-				<td><input name="name" type="text" size="60"/></td>
+				<td><input name="name" type="text" size="60" required="true"/></td>
 			</tr>
 			<tr>
 				<td><label for="name">URL </label></td>
-				<td><input name="url" type="text" size="60"/> <br/></td>
+				<td><input name="url" type="text" size="60" required="true"/> <br/></td>
+			</tr>
+			<tr>
+				<td><label for="name">OK Status</label></td>
+				<td><input name="statusok" type="number" size="60" value=200 required="true"/> <br/></td>
 			</tr>
 			<tr>
 				<td><label>Frequency</label></td>
@@ -80,6 +84,10 @@ templ EditMonitor(site Monitor, notifications []Notification) {
 			<tr>
 				<td><label for="name">URL </label></td>
 				<td><input name="url" type="text" size="60" value={ site.URL }/> <br/></td>
+			</tr>
+			<tr>
+				<td><label for="name">OK Status</label></td>
+				<td><input name="statusok" type="number" size="60" value={ site.StatusOK } required="true"/> <br/></td>
 			</tr>
 			<tr>
 				<td><label>Frequency</label></td>

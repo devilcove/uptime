@@ -23,7 +23,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	// }
 	title := "Uptime"
 
-	status, err := getKeys([]string{"status"})
+	status, err := getAllStatus()
 	if err != nil {
 		log.Println("get status", err)
 		http.Error(w, "unable to access database", http.StatusInternalServerError)
@@ -189,6 +189,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
 		Timeout:       monitor.Timeout,
 		Type:          monitor.Type.Name(),
 		Notifications: monitor.Notifiers,
+		StatusOK:      monitor.StatusOK,
 	}
 	notifications := []templates.Notification{}
 	for _, n := range allNotifications {
@@ -280,6 +281,20 @@ func displayEditNotify(w http.ResponseWriter, r *http.Request) {
 				Channel: slack.Channel,
 			}),
 		}
+	case Discord:
+		var discord DisordNotifier
+		if err := json.Unmarshal(notification, &discord); err != nil {
+			log.Println("get notifier", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		components = []templ.Component{
+			templates.EditDisordNotification(templates.Notification{
+				Name:  discord.Name,
+				Token: discord.URL,
+			}),
+		}
+
 	}
 	templates.Layout("Notifications", components).Render(context.Background(), w)
 }

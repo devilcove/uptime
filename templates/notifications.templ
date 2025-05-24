@@ -31,7 +31,7 @@ templ ShowNotifications(notifications []Notification) {
 }
 
 templ EditSlackNotification(notification Notification) {
-	<h1>Edit Notication</h1>
+	<h1>Edit Notification</h1>
 	<h2>Notification Name:  { notification.Name }</h2>
 	<form action={ templ.SafeURL("/notifications/edit/" + notification.Name) } method="post">
 		<label for="token">Token</label>
@@ -45,6 +45,20 @@ templ EditSlackNotification(notification Notification) {
 		@SubmitButton("Edit")
 	</form>
 }
+
+templ EditDisordNotification(notification Notification) {
+	<h1>Edit Notication</h1>
+	<h2>Notification Name:  { notification.Name }</h2>
+	<form action={ templ.SafeURL("/notifications/edit/" + notification.Name) } method="post">
+		<label for="webhook">Webhook URL</label>
+		<input name="webhook" type="text" size="60" value={ notification.URL }/>
+		<br/>
+		<input name="type" type="hidden" value="discord"/>
+		@LinkButton("Cancel", "/notifications")
+		@SubmitButton("Edit")
+	</form>
+}
+
 
 templ DeleteNotification(name string) {
 	<h1>Delete Notification { name }</h1>
@@ -85,7 +99,11 @@ templ NewNotification() {
 			<br/>
 		</div>
 		<div id="discord" style="display:none">
-			discord: not implemented
+			Discord Data
+			<br/>
+			<label for="webhook">Web Hook URL</label>
+			<input name="webhook" type="text" size="60"/>
+			<br/>
 		</div>
 		<div id="email" style="display:none">
 			email: not implemented

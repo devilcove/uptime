@@ -24,6 +24,16 @@ func createNewNotify(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+	case "discord":
+		discord := DisordNotifier{
+			Name: r.FormValue("name"),
+			URL:  r.FormValue("webhook"),
+		}
+		log.Println("create discord notification", discord)
+		if err := createNotify(Discord, discord); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	default:
 		w.Write([]byte("not yet implemented"))
 		return
@@ -58,6 +68,8 @@ func editNotify(w http.ResponseWriter, r *http.Request) {
 	switch notificationType {
 	case "slack":
 		editSlackNotification(w, r)
+	case "discord":
+		editDiscordNotification(w, r)
 	default:
 		http.Error(w, errNotImplemented.Error(), http.StatusBadRequest)
 		return
@@ -71,6 +83,20 @@ func editSlackNotification(w http.ResponseWriter, r *http.Request) {
 		Channel: r.FormValue("channel"),
 	}
 	if err := updateNotify(Slack, notification); err != nil {
+		log.Println("update notification", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	reset <- syscall.SIGHUP
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func editDiscordNotification(w http.ResponseWriter, r *http.Request) {
+	notification := DisordNotifier{
+		Name: r.PathValue("notify"),
+		URL:  r.FormValue("webhook"),
+	}
+	if err := updateNotify(Discord, notification); err != nil {
 		log.Println("update notification", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

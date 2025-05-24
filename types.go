@@ -20,6 +20,11 @@ const (
 	SMS
 )
 
+const (
+	DiscordRed  = 14177041
+	DiscordBlue = 1127128
+)
+
 var MonitorTypeNames = map[MonitorType]string{
 	HTTP: "http",
 	PING: "ping",
@@ -66,7 +71,7 @@ type Monitor struct {
 	Freq      string
 	Name      string
 	Timeout   string
-	Status    Status
+	StatusOK  int
 	Notifiers []string
 }
 
@@ -105,6 +110,25 @@ type User struct {
 	Name  string
 	Pass  string
 	Admin bool
+}
+
+// discord types
+type DisordNotifier struct {
+	Name string
+	URL  string
+}
+
+type DiscordMessage struct {
+	Content  string         `json:"content,omitempty"`
+	Username string         `json:"username,omitempty"`
+	Embeds   []DiscordEmbed `json:"embeds,omitempty"`
+}
+
+type DiscordEmbed struct {
+	Title       string `json:"title,omitempty"`
+	Color       int    `json:"color,omitempty"`
+	URL         string `json:"url,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // slack types

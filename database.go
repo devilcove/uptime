@@ -92,7 +92,21 @@ func addKey(name string, path []string, value []byte) error {
 	})
 }
 
-func getKeys(path []string) ([]Status, error) {
+func getStatus(name string) (Status, error) {
+	status := Status{}
+	path := []string{"status", name}
+	err := db.View(func(tx *bbolt.Tx) error {
+		key := getKey(path, tx)
+		if err := json.Unmarshal(key, &status); err != nil {
+			return err
+		}
+		return nil
+	})
+	return status, err
+}
+
+func getAllStatus() ([]Status, error) {
+	path := []string{"status"}
 	allStatus := []Status{}
 	status := Status{}
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -360,6 +374,27 @@ func getSlack(bucket *bbolt.Bucket, name []byte) (SlackNotifier, error) {
 	return slack, err
 }
 
+func getDiscord(bucket *bbolt.Bucket, name []byte) (DisordNotifier, error) {
+	log.Println("get slack notification", string(name))
+	var discord DisordNotifier
+	notifyType := bucket.Get([]byte("type"))
+	if notifyType == nil {
+		log.Println("type key not found")
+		return discord, errNoKey
+	}
+	if notifyType[0] != 1 {
+		log.Println("wrong notification type")
+		return discord, errors.New("wrong notification type")
+	}
+	key := bucket.Get([]byte("data"))
+	if key == nil {
+		log.Println("no data")
+		return discord, errNoKey
+	}
+	err := json.Unmarshal(key, &discord)
+	return discord, err
+}
+
 func createSlack(notifyBucket *bbolt.Bucket, slack SlackNotifier) error {
 	bytes, err := json.Marshal(slack)
 	if err != nil {
@@ -375,6 +410,21 @@ func createSlack(notifyBucket *bbolt.Bucket, slack SlackNotifier) error {
 	return bucket.Put([]byte("data"), bytes)
 }
 
+func createDiscord(notifyBucket *bbolt.Bucket, discord DisordNotifier) error {
+	bytes, err := json.Marshal(discord)
+	if err != nil {
+		return err
+	}
+	bucket, err := notifyBucket.CreateBucket([]byte(discord.Name))
+	if err != nil {
+		return err
+	}
+	if err := bucket.Put([]byte("type"), NotifyTypeBytes[Discord]); err != nil {
+		return err
+	}
+	return bucket.Put([]byte("data"), bytes)
+}
+
 func updateSlack(notifyBucket *bbolt.Bucket, slack SlackNotifier) error {
 	log.Println("update slack notification", slack)
 	bytes, err := json.Marshal(slack)
@@ -384,6 +434,19 @@ func updateSlack(notifyBucket *bbolt.Bucket, slack SlackNotifier) error {
 	bucket := notifyBucket.Bucket([]byte(slack.Name))
 	if bucket == nil {
 		return fmt.Errorf("%w %s", berrors.ErrBucketNotFound, slack.Name)
+	}
+	return bucket.Put([]byte("data"), bytes)
+}
+
+func updateDiscord(notifyBucket *bbolt.Bucket, discord DisordNotifier) error {
+	log.Println("update discord notification", discord)
+	bytes, err := json.Marshal(discord)
+	if err != nil {
+		return err
+	}
+	bucket := notifyBucket.Bucket([]byte(discord.Name))
+	if bucket == nil {
+		return fmt.Errorf("%w %s", berrors.ErrBucketNotFound, discord.Name)
 	}
 	return bucket.Put([]byte("data"), bytes)
 }
@@ -425,6 +488,8 @@ func createNotify(notifyType NotifyType, data any) error {
 		switch notifyType {
 		case Slack:
 			return createSlack(bucket, data.(SlackNotifier))
+		case Discord:
+			return createDiscord(bucket, data.(DisordNotifier))
 		default:
 			return errNotImplemented
 		}
@@ -441,6 +506,8 @@ func updateNotify(notifyType NotifyType, data any) error {
 		switch notifyType {
 		case Slack:
 			return updateSlack(bucket, data.(SlackNotifier))
+		case Discord:
+			return updateDiscord(bucket, data.(DisordNotifier))
 		default:
 			return errNotImplemented
 		}
@@ -485,6 +552,11 @@ func getAllNotifications() []Notification {
 			switch notification.Type {
 			case Slack:
 				notification.Notification, err = getSlack(notifyBucket, k)
+				if err != nil {
+					return err
+				}
+			case Discord:
+				notification.Notification, err = getDiscord(notifyBucket, k)
 				if err != nil {
 					return err
 				}

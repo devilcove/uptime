@@ -125,10 +125,18 @@ func create(w http.ResponseWriter, r *http.Request) {
 	log.Println(monitor)
 	type_, err := strconv.Atoi(r.FormValue("type"))
 	if err != nil {
+		log.Println("ascii converstion monitor type", r.FormValue("type"), err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ok, err := strconv.Atoi(r.FormValue("statusok"))
+	if err != nil {
+		log.Println("ascii converstion statusOK", r.FormValue("statusok"), err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	monitor.Type = MonitorType(type_)
+	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return
@@ -163,12 +171,18 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	ok, err := strconv.Atoi(r.FormValue("statusok"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	for key, value := range r.Form {
 		if key == "notifications" {
 			monitor.Notifiers = append(monitor.Notifiers, value...)
 		}
 	}
 	monitor.Type = MonitorType(type_)
+	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
 		return
@@ -259,5 +273,29 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte("slack message sent successfully"))
+	case Discord:
+		var discord DisordNotifier
+		if err := json.Unmarshal(notification, &discord); err != nil {
+			log.Println("unmarshal discord notifier", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		data := DiscordMessage{
+			Content:  "Text Message",
+			Username: "Uptime",
+			Embeds: []DiscordEmbed{
+				{
+					Title:       "test message",
+					Color:       DiscordRed,
+					URL:         "https://example.com",
+					Description: "test status message",
+				},
+			},
+		}
+		if err := discord.Send(data); err != nil {
+			log.Println("send discord message", err)
+			http.Error(w, "error sending discord message"+err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte("discord message send successfully"))
 	}
 }

@@ -11,6 +11,7 @@ type StatusRows struct {
 	Site         templ.Component
 	Status       string
 	StatusCode   string
+	StatusOK     int
 	Time         string
 	ResponseTime string
 	CertExpiry   string
@@ -30,6 +31,8 @@ type Notification struct {
 	// slack
 	Token   string
 	Channel string
+	// discord
+	URL string
 }
 
 type Monitor struct {
@@ -39,6 +42,7 @@ type Monitor struct {
 	Timeout       string
 	Notifications []string
 	Type          string
+	StatusOK      int
 }
 
 type History struct {

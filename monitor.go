@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -53,13 +54,19 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 
 func updateStatus(m *Monitor, check Checker) {
 	status := check(m)
-	if status.Status == m.Status.Status {
-		if status.Time.Sub(m.Status.Time) < time.Hour {
+	mStatus, err := getStatus(m.Name)
+	if status.Status == mStatus.Status {
+		if status.Time.Sub(mStatus.Time) < time.Hour {
 			log.Println("no change in last hour ... skipping", m.Name)
 			return
 		}
+	} else {
+		log.Println("status change", m.Name, "monitor status", mStatus.Status, "checked status", status.Status)
+		m.statusNotification(status)
 	}
-	m.Status = status
+	if status.CertExpiry < 10 {
+		m.certExpiryNotification(status)
+	}
 	bytes, err := json.Marshal(&status)
 	if err != nil {
 		log.Println("json err", err)
@@ -114,5 +121,104 @@ func getChecker(t MonitorType) Checker {
 		return checkHTTP
 	default:
 		return nil
+	}
+}
+
+func (m *Monitor) statusNotification(status Status) {
+	for _, n := range m.Notifiers {
+		kind, notification, err := getNotify(n)
+		if err != nil {
+			log.Println("get notification for monitor", m.Name, n, err)
+			return
+		}
+		switch kind {
+		case Slack:
+			var slack SlackNotifier
+			if err := json.Unmarshal(notification, &slack); err != nil {
+				log.Println("unmarshal slack notification", err)
+				return
+			}
+			data := SlackMessage{
+				Text: "Uptime Status Update",
+				Attachments: []Attachment{
+					{
+						Pretext: status.Site,
+						Text:    status.URL,
+					},
+					{
+						Pretext: "Status",
+						Text:    status.Status,
+					},
+				},
+			}
+			if err := slack.Send(data); err != nil {
+				log.Println("send slack message", err)
+			} else {
+				log.Println("sent slack message", status.Site, status.Status)
+			}
+		case Discord:
+			var discord DisordNotifier
+			if err := json.Unmarshal(notification, &discord); err != nil {
+				log.Println("unmarshal discord notification", err)
+				return
+			}
+			data := DiscordMessage{
+				Content:  "Uptime Status Message",
+				Username: "Uptime",
+				Embeds: []DiscordEmbed{
+					{
+						Title:       status.Site,
+						Color:       DiscordRed,
+						URL:         status.URL,
+						Description: status.URL,
+					},
+					{
+						Title:       "Status",
+						Description: status.Status,
+					},
+				},
+			}
+			if err := discord.Send(data); err != nil {
+				log.Println("send discord message", err)
+			} else {
+				log.Println("sent discord message", status.Site, status.Status)
+			}
+		}
+	}
+}
+
+func (m *Monitor) certExpiryNotification(status Status) {
+	for _, n := range m.Notifiers {
+		kind, notification, err := getNotify(n)
+		if err != nil {
+			log.Println("get notification for monitor", m.Name, n, err)
+			return
+		}
+		switch kind {
+		case Slack:
+			var slack SlackNotifier
+			if err := json.Unmarshal(notification, &slack); err != nil {
+				log.Println("unmarshal slack notification", err)
+				return
+			}
+			data := SlackMessage{
+				Text: "Uptime Certificate Expiry",
+				Attachments: []Attachment{
+					{
+						Pretext: status.Site,
+						Text:    status.URL,
+					},
+					{
+						Pretext: "Cert Expiry",
+						Text:    strconv.Itoa(status.CertExpiry),
+					},
+				},
+			}
+			if err := slack.Send(data); err != nil {
+				log.Println("send slack message", err)
+			} else {
+				log.Println("sent slack message", status.Site, status.Status)
+			}
+		}
 	}
 }

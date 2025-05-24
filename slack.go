@@ -70,3 +70,31 @@ func (s *SlackNotifier) getChannel() (string, error) {
 	log.Println(string(body))
 	return channel, errNotFound
 }
+
+func (d *DisordNotifier) Send(data DiscordMessage) error {
+	payload, err := json.Marshal(data)
+	if err != nil {
+		log.Println("marshal discord message", err)
+		return err
+	}
+	req, err := http.NewRequest(http.MethodPost, d.URL, bytes.NewBuffer(payload))
+	if err != nil {
+		log.Println("new request", err)
+		return err
+	}
+	log.Println("discord send", d.URL, string(payload))
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{Timeout: time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	log.Println("status", resp.Status, "response", string(bytes))
+	return nil
+}
