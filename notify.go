@@ -20,7 +20,7 @@ func createNewNotify(w http.ResponseWriter, r *http.Request) {
 			Channel: r.FormValue("channel"),
 		}
 		log.Println("create slack notification", slack)
-		if err := createNotify(Slack, slack); err != nil {
+		if err := createNotify(slack.Name, Slack, slack); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -30,7 +30,7 @@ func createNewNotify(w http.ResponseWriter, r *http.Request) {
 			URL:  r.FormValue("webhook"),
 		}
 		log.Println("create discord notification", discord)
-		if err := createNotify(Discord, discord); err != nil {
+		if err := createNotify(discord.Name, Discord, discord); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -82,7 +82,7 @@ func editSlackNotification(w http.ResponseWriter, r *http.Request) {
 		Token:   r.FormValue("token"),
 		Channel: r.FormValue("channel"),
 	}
-	if err := updateNotify(Slack, notification); err != nil {
+	if err := updateNotify(notification.Name, Slack, notification); err != nil {
 		log.Println("update notification", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -96,7 +96,7 @@ func editDiscordNotification(w http.ResponseWriter, r *http.Request) {
 		Name: r.PathValue("notify"),
 		URL:  r.FormValue("webhook"),
 	}
-	if err := updateNotify(Discord, notification); err != nil {
+	if err := updateNotify(notification.Name, Discord, notification); err != nil {
 		log.Println("update notification", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
