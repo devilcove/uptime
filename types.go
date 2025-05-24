@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 type (
 	MonitorType int
@@ -64,6 +66,13 @@ type Status struct {
 	CertExpiry   int
 	ResponseTime time.Duration
 }
+
+//type Monitorer interface {
+//	updateStatus()
+//	check() Status
+//	sendStatusNotification(Status)
+//	sendCertificateExpiryNotification(Status)
+//}
 
 type Monitor struct {
 	Type      MonitorType

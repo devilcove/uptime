@@ -25,11 +25,6 @@ func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
 
 func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 	defer wg.Done()
-	checker := getChecker(m.Type)
-	if checker == nil {
-		log.Println("no checker for", m.Name, m.Type)
-		return
-	}
 	frequency, err := time.ParseDuration(m.Freq)
 	if err != nil {
 		log.Printf("invalid frequency for monitor %s, %s, %v", m.Name, m.Freq, err)
@@ -45,29 +40,29 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 			log.Println(m.Name, "shutting down")
 			return
 		case <-ticker.C:
-			updateStatus(m, checker)
+			m.updateStatus()
 		case <-timer.C:
-			updateStatus(m, checker)
+			m.updateStatus()
 		}
 	}
 }
 
-func updateStatus(m *Monitor, check Checker) {
-	status := check(m)
-	mStatus, err := getStatus(m.Name)
-	if status.Status == mStatus.Status {
-		if status.Time.Sub(mStatus.Time) < time.Hour {
+func (m *Monitor) updateStatus() {
+	newStatus := m.Check()
+	oldStatus, err := getStatus(m.Name)
+	if newStatus.Status == oldStatus.Status {
+		if newStatus.Time.Sub(oldStatus.Time) < time.Hour {
 			log.Println("no change in last hour ... skipping", m.Name)
 			return
 		}
 	} else {
-		log.Println("status change", m.Name, "monitor status", mStatus.Status, "checked status", status.Status)
-		m.statusNotification(status)
+		log.Println("status change", m.Name, "monitor status", oldStatus.Status, "checked status", newStatus.Status)
+		m.sendStatusNotification(newStatus)
 	}
-	if status.CertExpiry < 10 {
-		m.certExpiryNotification(status)
+	if newStatus.CertExpiry < 10 {
+		m.sendCertExpiryNotification(newStatus)
 	}
-	bytes, err := json.Marshal(&status)
+	bytes, err := json.Marshal(&newStatus)
 	if err != nil {
 		log.Println("json err", err)
 		return
@@ -76,14 +71,14 @@ func updateStatus(m *Monitor, check Checker) {
 		log.Println("update database", m.Name, err)
 		return
 	}
-	if err = addKey(status.Time.Format(time.RFC3339),
+	if err = addKey(newStatus.Time.Format(time.RFC3339),
 		[]string{"history", m.Name}, bytes); err != nil {
 		log.Println("update history", m.Name, err)
 	}
-	log.Println("status updated", m.Name, status.Status)
+	log.Println("status updated", m.Name, newStatus.Status)
 }
 
-func checkHTTP(m *Monitor) Status {
+func (m *Monitor) checkHTTP() Status {
 	s := Status{
 		Site: m.Name,
 		URL:  m.URL,
@@ -115,16 +110,17 @@ func checkHTTP(m *Monitor) Status {
 	return s
 }
 
-func getChecker(t MonitorType) Checker {
-	switch t { //nolint:exhaustive
+func (m *Monitor) Check() Status {
+	switch m.Type {
 	case HTTP:
-		return checkHTTP
+		return m.checkHTTP()
 	default:
-		return nil
+		log.Println("unimplemented monitor check", m.Name, m.Type.Name())
+		return Status{}
 	}
 }
 
-func (m *Monitor) statusNotification(status Status) {
+func (m *Monitor) sendStatusNotification(status Status) {
 	for _, n := range m.Notifiers {
 		kind, notification, err := getNotify(n)
 		if err != nil {
@@ -187,7 +183,7 @@ func (m *Monitor) statusNotification(status Status) {
 	}
 }
 
-func (m *Monitor) certExpiryNotification(status Status) {
+func (m *Monitor) sendCertExpiryNotification(status Status) {
 	for _, n := range m.Notifiers {
 		kind, notification, err := getNotify(n)
 		if err != nil {

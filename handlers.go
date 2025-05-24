@@ -123,7 +123,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println(monitor)
-	type_, err := strconv.Atoi(r.FormValue("type"))
+	kind, err := strconv.Atoi(r.FormValue("type"))
 	if err != nil {
 		log.Println("ascii converstion monitor type", r.FormValue("type"), err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -135,7 +135,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	monitor.Type = MonitorType(type_)
+	monitor.Type = MonitorType(kind)
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
@@ -166,7 +166,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 	}
-	type_, err := strconv.Atoi(r.FormValue("type"))
+	kind, err := strconv.Atoi(r.FormValue("type"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -181,7 +181,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 			monitor.Notifiers = append(monitor.Notifiers, value...)
 		}
 	}
-	monitor.Type = MonitorType(type_)
+	monitor.Type = MonitorType(kind)
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
