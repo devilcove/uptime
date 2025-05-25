@@ -75,23 +75,16 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, "devilcove-uptime")
+		session, err := sessionData(w, r)
 		if err != nil {
 			log.Println("session err", err)
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
-		loggedIn := session.Values["logged in"]
-		if x, ok := loggedIn.(bool); !ok || !x {
-			log.Println("no session")
-			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-			return
-		}
-		if !loggedIn.(bool) {
+		if !session.LoggedIn {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		if err := session.Save(r, w); err != nil {
+		if err := session.Session.Save(r, w); err != nil {
 			log.Println("save session", err)
 		}
 		next.ServeHTTP(w, r)

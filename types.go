@@ -2,6 +2,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/gorilla/sessions"
 )
 
 type (
@@ -106,13 +108,11 @@ func (t TimeFrame) Name() string {
 	return TimeFrameNames[t]
 }
 
-type StatusData struct {
-	Title string
-	User  string
-	Admin bool
-	Page  string
-	Site  string
-	Data  []any
+type Session struct {
+	User     string
+	LoggedIn bool
+	Admin    bool
+	Session  *sessions.Session
 }
 
 type User struct {
