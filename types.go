@@ -7,14 +7,14 @@ import (
 )
 
 type (
-	MonitorType int
+	MonitorType string
 	NotifyType  int
 )
 
 const (
-	HTTP MonitorType = iota
-	PING
-	TCP
+	HTTP MonitorType = "http"
+	PING MonitorType = "ping"
+	TCP  MonitorType = "tcp"
 )
 
 const (
@@ -29,11 +29,11 @@ const (
 	DiscordBlue = 1127128
 )
 
-var MonitorTypeNames = map[MonitorType]string{
-	HTTP: "http",
-	PING: "ping",
-	TCP:  "tcp",
-}
+//var MonitorTypeNames = map[MonitorType]string{
+//	HTTP: "http",
+//	PING: "ping",
+//	TCP:  "tcp",
+//}
 
 var NotifyTypeNames = map[NotifyType]string{
 	Slack:   "slack",
@@ -49,15 +49,13 @@ var NotifyTypeBytes = map[NotifyType][]byte{
 	SMS:     {3},
 }
 
-func (t MonitorType) Name() string {
-	return MonitorTypeNames[t]
-}
+//func (t MonitorType) Name() string {
+//	return MonitorTypeNames[t]
+//}
 
 func (t NotifyType) Name() string {
 	return NotifyTypeNames[t]
 }
-
-type Checker func(*Monitor) Status
 
 type Status struct {
 	Site         string

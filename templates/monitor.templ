@@ -42,8 +42,8 @@ templ NewMonitor(notifications []Notification) {
 			<tr>
 				<td><label>Type</label></td>
 				<td>
-					<input checked="checked" name="type" type="radio" value="0"/> Website
-					<input name="type" type="radio" value="1"/> Ping 
+					<input checked="checked" name="type" type="radio" value="http"/> Website
+					<input name="type" type="radio" value="ping"/> Ping 
 				</td>
 			</tr>
 			<tr>
@@ -152,11 +152,11 @@ templ EditMonitor(site Monitor, notifications []Notification) {
 				<td>
 					switch site.Type {
 						case "http":
-							<input checked="checked" name="type" type="radio" value="0"/> Website
+							<input checked="checked" name="type" type="radio" value="http"/> Website
 							<input name="type" type="radio" value="1"/> Ping
 						case "ping":
 							<input name="type" type="radio" value="0"/> Website
-							<input checked="checked" name="type" type="radio" value="1"/> Ping
+							<input checked="checked" name="type" type="radio" value="ping"/> Ping
 					}
 				</td>
 			</tr>

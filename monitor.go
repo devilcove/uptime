@@ -85,7 +85,7 @@ func (m *Monitor) checkHTTP() Status {
 		Time: time.Now(),
 	}
 	if m.Type != HTTP {
-		s.Status = "wrong type for http check" + m.Type.Name()
+		s.Status = "wrong type for http check" + string(m.Type)
 		return s
 	}
 	timeout, err := time.ParseDuration(m.Timeout)
@@ -115,7 +115,7 @@ func (m *Monitor) Check() Status {
 	case HTTP:
 		return m.checkHTTP()
 	default:
-		log.Println("unimplemented monitor check", m.Name, m.Type.Name())
+		log.Println("unimplemented monitor check", m.Name, string(m.Type))
 		return Status{}
 	}
 }

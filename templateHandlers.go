@@ -162,7 +162,7 @@ func newMonitor(w http.ResponseWriter, r *http.Request) {
 	components := []templ.Component{
 		templates.NewMonitor(notifications),
 	}
-	templates.Layout("Edit User", components).Render(context.Background(), w)
+	templates.Layout("New Monitor", components).Render(context.Background(), w)
 }
 
 func deleteSite(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +171,7 @@ func deleteSite(w http.ResponseWriter, r *http.Request) {
 	components := []templ.Component{
 		templates.DeleteMonitor(site),
 	}
-	templates.Layout("Edit User", components).Render(context.Background(), w)
+	templates.Layout("Delete Monitor", components).Render(context.Background(), w)
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +187,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
 		URL:           monitor.URL,
 		Freq:          monitor.Freq,
 		Timeout:       monitor.Timeout,
-		Type:          monitor.Type.Name(),
+		Type:          string(monitor.Type),
 		Notifications: monitor.Notifiers,
 		StatusOK:      monitor.StatusOK,
 	}

@@ -130,6 +130,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		URL:     r.FormValue("url"),
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
+		Type:    MonitorType(r.FormValue("type")),
 	}
 	for key, value := range r.Form {
 		if key == "notifications" {
@@ -137,19 +138,12 @@ func create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println(monitor)
-	kind, err := strconv.Atoi(r.FormValue("type"))
-	if err != nil {
-		log.Println("ascii converstion monitor type", r.FormValue("type"), err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	ok, err := strconv.Atoi(r.FormValue("statusok"))
 	if err != nil {
 		log.Println("ascii converstion statusOK", r.FormValue("statusok"), err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	monitor.Type = MonitorType(kind)
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
@@ -179,11 +173,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		URL:     r.FormValue("url"),
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
-	}
-	kind, err := strconv.Atoi(r.FormValue("type"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		Type:    MonitorType(r.FormValue("type")),
 	}
 	ok, err := strconv.Atoi(r.FormValue("statusok"))
 	if err != nil {
@@ -195,7 +185,6 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 			monitor.Notifiers = append(monitor.Notifiers, value...)
 		}
 	}
-	monitor.Type = MonitorType(kind)
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		w.Write([]byte("not implemented yet")) //nolint:errcheck
