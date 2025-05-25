@@ -8,7 +8,7 @@ import (
 
 type (
 	MonitorType string
-	NotifyType  int
+	NotifyType  string
 )
 
 const (
@@ -18,44 +18,16 @@ const (
 )
 
 const (
-	Slack NotifyType = iota
-	Discord
-	Email
-	SMS
+	Slack   NotifyType = "slack"
+	Discord NotifyType = "discord"
+	Email   NotifyType = "email"
+	SMS     NotifyType = "sms"
 )
 
 const (
 	DiscordRed  = 14177041
 	DiscordBlue = 1127128
 )
-
-//var MonitorTypeNames = map[MonitorType]string{
-//	HTTP: "http",
-//	PING: "ping",
-//	TCP:  "tcp",
-//}
-
-var NotifyTypeNames = map[NotifyType]string{
-	Slack:   "slack",
-	Discord: "discord",
-	Email:   "email",
-	SMS:     "sms",
-}
-
-var NotifyTypeBytes = map[NotifyType][]byte{
-	Slack:   {0},
-	Discord: {1},
-	Email:   {2},
-	SMS:     {3},
-}
-
-//func (t MonitorType) Name() string {
-//	return MonitorTypeNames[t]
-//}
-
-func (t NotifyType) Name() string {
-	return NotifyTypeNames[t]
-}
 
 type Status struct {
 	Site         string

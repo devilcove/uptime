@@ -421,7 +421,7 @@ func createNotify(name string, notifyType NotifyType, data any) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte("type"), NotifyTypeBytes[notifyType]); err != nil {
+		if err := bucket.Put([]byte("type"), []byte(notifyType)); err != nil {
 			return err
 		}
 		return bucket.Put([]byte("data"), bytes)
@@ -430,7 +430,7 @@ func createNotify(name string, notifyType NotifyType, data any) error {
 
 // updateNotify updates an existing notification bucket
 func updateNotify(name string, notifyType NotifyType, data any) error {
-	log.Println("update notification", NotifyTypeNames[notifyType], data)
+	log.Println("update notification", notifyType, data)
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("notify"))
 		if bucket == nil {
@@ -461,7 +461,7 @@ func getNotify(name string) (NotifyType, []byte, error) {
 		if notify == nil {
 			return berrors.ErrBucketNotFound
 		}
-		notifyType = NotifyType(notify.Get([]byte("type"))[0])
+		notifyType = NotifyType(notify.Get([]byte("type")))
 		data = notify.Get([]byte("data"))
 		return nil
 	})
@@ -483,7 +483,7 @@ func getAllNotifications() []Notification {
 			if notifyBucket == nil {
 				return berrors.ErrBucketNotFound
 			}
-			notification.Type = NotifyType(notifyBucket.Get([]byte("type"))[0])
+			notification.Type = NotifyType(notifyBucket.Get([]byte("type")))
 			dataValue := notifyBucket.Get([]byte("data"))
 			if dataValue == nil {
 				log.Println("no data for notification", notification.Name)

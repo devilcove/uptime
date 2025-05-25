@@ -248,7 +248,7 @@ func notifications(w http.ResponseWriter, r *http.Request) {
 	for _, n := range getAllNotifications() {
 		notifications = append(notifications, templates.Notification{
 			Name: n.Name,
-			Type: NotifyTypeNames[n.Type],
+			Type: string(n.Type),
 		})
 	}
 	components := []templ.Component{
@@ -290,12 +290,14 @@ func displayEditNotify(w http.ResponseWriter, r *http.Request) {
 		}
 		components = []templ.Component{
 			templates.EditDisordNotification(templates.Notification{
-				Name:  discord.Name,
-				Token: discord.URL,
+				Name: discord.Name,
+				URL:  discord.URL,
 			}),
 		}
-
 	}
+	// TODO Remove
+	log.Println(string(notification))
+
 	templates.Layout("Notifications", components).Render(context.Background(), w)
 }
 
