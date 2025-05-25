@@ -124,15 +124,14 @@ templ Admin(admin bool, users []User) {
 	for _, user := range users {
         <tr>
 		    <td><label>{ user.Name }</label></td>
-		for i :=range user.Actions {
-			<td>@user.Actions[i]</td>
-		}
+            <td>@LinkButton("Edit", "/user/"+user.Name)</td>
+            <td>@FormButton("Delete", templ.SafeURL("/user/delete/"+user.Name))</td>
         </tr>
 	}
     </table>
     <dialog id="new">
     <h2>New User</h2>
-    <form action="/user" method="post">
+    <form action="/user/add" method="post">
         <label for="name">Name</label>
         <input name="name" type="text" size="40"/>
         <br>
@@ -167,7 +166,7 @@ templ EditUser(user User, admin bool) {
                 </tr>
             }
         </table>
-        @LinkButton("Cancel", "/admin")
+        @LinkButton("Cancel", "/user")
         @SubmitButton("Edit")
     </form>
 }

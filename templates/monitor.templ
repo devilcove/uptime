@@ -182,10 +182,10 @@ templ EditMonitor(site Monitor, notifications []Notification) {
 templ ShowHistory(site string, history []History) {
 	<h1>Uptime History</h1>
 	<div>
-		@LinkButton("Hour", fmt.Sprintf("/history/%s/hour", site))
-		@LinkButton("Day", fmt.Sprintf("/history/%s/day", site))
-		@LinkButton("Week", fmt.Sprintf("/history/%s/week", site))
-		@LinkButton("Month", fmt.Sprintf("/history/%s/month", site))
+		@LinkButton("Hour", fmt.Sprintf("/monitor/history/%s/hour", site))
+		@LinkButton("Day", fmt.Sprintf("/monitor/history/%s/day", site))
+		@LinkButton("Week", fmt.Sprintf("/monitor/history/%s/week", site))
+		@LinkButton("Month", fmt.Sprintf("/monitor/history/%s/month", site))
         @LinkButton("Home", "/")
 	</div>
 	<div>

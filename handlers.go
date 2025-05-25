@@ -10,33 +10,6 @@ import (
 	"syscall"
 )
 
-func sessionData(w http.ResponseWriter, r *http.Request) (Session, error) {
-	s := Session{}
-	session, err := store.Get(r, "devilcove-uptime")
-	if err != nil {
-		log.Println("session err", err)
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		return Session{}, err
-	}
-	user := session.Values["user"]
-	loggedIn := session.Values["logged in"]
-	admin := session.Values["admin"]
-	if x, ok := loggedIn.(bool); !ok || !x {
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		return Session{}, err
-	} else {
-		s.LoggedIn = x
-	}
-	if u, ok := user.(string); ok {
-		s.User = u
-	}
-	if a, ok := admin.(bool); ok {
-		s.Admin = a
-	}
-	s.Session = session
-	return s, nil
-}
-
 func addUser(w http.ResponseWriter, r *http.Request) {
 	var user User
 	if err := r.ParseForm(); err != nil {
@@ -56,7 +29,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	http.Redirect(w, r, "/user", http.StatusFound)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +50,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	http.Redirect(w, r, "/user", http.StatusFound)
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +60,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	http.Redirect(w, r, "/user", http.StatusFound)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {

@@ -1,7 +1,5 @@
 package templates
 
-import "fmt"
-
 templ ShowNotifications(notifications []Notification) {
 	<h1>Notifications</h1>
 	@LinkButton("New Notification", "/notifications/new")
@@ -20,9 +18,13 @@ templ ShowNotifications(notifications []Notification) {
 					<div class="divTableCell">{ n.Name }</div>
 					<div class="divTableCell">{ n.Type }</div>
 					<div class="divTableCell">
-						@LinkButton("Edit", fmt.Sprintf("/notifications/edit/%s", n.Name))
-						@LinkButton("Delete", fmt.Sprintf("/notifications/delete/%s", n.Name))
-						@LinkButton("Test", fmt.Sprintf("/notifications/test/%s", n.Name))
+						@LinkButton("Edit", "/notifications/edit/"+ n.Name)
+					</div>
+					<div class="divTableCell">
+						@FormButton("Delete", templ.SafeURL("/notifications/delete/"+ n.Name))
+					</div>
+					<div class="divTableCell">
+						@LinkButton("Test", "/notifications/test/" + n.Name)
 					</div>
 				</div>
 			</div>
@@ -78,7 +80,7 @@ script displayExtra(id string) {
 
 templ NewNotification() {
 	<h1>New Notificaton</h1>
-	<form action="/notification/new" method="post">
+	<form action="/notifications/new" method="post">
 		<label for="name">Name</label>
 		<input name="name" type="text" size="60"/>
 		<br/>

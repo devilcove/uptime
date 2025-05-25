@@ -25,7 +25,7 @@ templ DialogButton(name, dialog string) {
 }
 
 templ FormButton(name string, location templ.SafeURL) {
-	<form action={location} method="post">
+	<form action={location} method="post" onsubmit="return confirm('confirm');">
 	<button type="submit">{name}</button>
 	</form>
 }

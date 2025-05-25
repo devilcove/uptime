@@ -35,7 +35,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		templates.LinkButton("Delete", "/edit/"+stat.Site).Render(context.Background(), buf)
 
 		row := templates.StatusRows{
-			Site:         templates.Link(templ.SafeURL("history/"+stat.Site+"/hour"), stat.Site),
+			Site:         templates.Link(templ.SafeURL("/monitor/history/"+stat.Site+"/hour"), stat.Site),
 			Status:       stat.Status,
 			StatusCode:   strconv.Itoa(stat.StatusCode),
 			Time:         stat.Time.Local().Format(time.RFC822),
@@ -62,11 +62,11 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		},
 		{
 			Name:     "Logout",
-			Location: "./logout",
+			Location: "/logout",
 		},
 		{
 			Name:     "User Admin",
-			Location: "./admin",
+			Location: "/user",
 		},
 	}
 	headings := []string{"Site", "Status", "Code", "Time", "Response Time", "CertExpiry", "Actions"}
