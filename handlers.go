@@ -29,7 +29,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/user", http.StatusFound)
+	http.Redirect(w, r, "/user/", http.StatusFound)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/user", http.StatusFound)
+	http.Redirect(w, r, "/user/", http.StatusFound)
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, "/user", http.StatusFound)
+	http.Redirect(w, r, "/user/", http.StatusFound)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +89,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
+	log.Println("user", user.Name, "logged in")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -274,4 +275,12 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write([]byte("discord message send successfully"))
 	}
+}
+
+func favicon(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "files/favicon.svg")
+}
+
+func styles(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "files/styles.css")
 }

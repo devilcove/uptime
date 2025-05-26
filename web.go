@@ -27,6 +27,8 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 	http.HandleFunc("/logout", logout)
 	http.HandleFunc("GET /login", displayLogin)
 	http.HandleFunc("POST /login", login)
+	http.HandleFunc("/favicon.ico", favicon)
+	http.HandleFunc("/styles.css", styles)
 
 	plain := middleware.Router("", auth)
 	plain.HandleFunc("/{$}", mainPage)
@@ -73,8 +75,8 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func auth(next http.Handler) http.Handler {
-	log.Println("checking authorization")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("checking authorization")
 		session, err := sessionData(w, r)
 		if err != nil {
 			log.Println("session err", err)

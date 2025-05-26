@@ -39,7 +39,7 @@ func createNewNotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reset <- syscall.SIGHUP
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
 func deleteNotify(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +55,7 @@ func deleteNotify(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
 func editNotify(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +88,7 @@ func editSlackNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reset <- syscall.SIGHUP
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
 func editDiscordNotification(w http.ResponseWriter, r *http.Request) {
@@ -102,5 +102,5 @@ func editDiscordNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reset <- syscall.SIGHUP
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
