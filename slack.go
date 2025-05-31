@@ -3,14 +3,81 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
-var errNotFound = errors.New("not found")
+// slack types
+type SlackNotifier struct {
+	Name    string
+	Token   string
+	Channel string
+}
+
+type ChannelResponse struct {
+	Ok               bool             `json:"ok"`
+	Channels         []Channels       `json:"channels"`
+	ResponseMetadata ResponseMetadata `json:"response_metadata"`
+}
+
+type Topic struct {
+	Value   string `json:"value"`
+	Creator string `json:"creator"`
+	LastSet int    `json:"last_set"`
+}
+
+type Purpose struct {
+	Value   string `json:"value"`
+	Creator string `json:"creator"`
+	LastSet int    `json:"last_set"`
+}
+type Channels struct {
+	ID                      string   `json:"id"`
+	Name                    string   `json:"name"`
+	IsChannel               bool     `json:"is_channel"`
+	IsGroup                 bool     `json:"is_group"`
+	IsIm                    bool     `json:"is_im"`
+	IsMpim                  bool     `json:"is_mpim"`
+	IsPrivate               bool     `json:"is_private"`
+	Created                 int      `json:"created"`
+	IsArchived              bool     `json:"is_archived"`
+	IsGeneral               bool     `json:"is_general"`
+	Unlinked                int      `json:"unlinked"`
+	NameNormalized          string   `json:"name_normalized"`
+	IsShared                bool     `json:"is_shared"`
+	IsOrgShared             bool     `json:"is_org_shared"`
+	IsPendingExtShared      bool     `json:"is_pending_ext_shared"`
+	PendingShared           []any    `json:"pending_shared"`
+	ContextTeamID           string   `json:"context_team_id"`
+	Updated                 int64    `json:"updated"`
+	ParentConversation      any      `json:"parent_conversation"`
+	Creator                 string   `json:"creator"`
+	IsExtShared             bool     `json:"is_ext_shared"`
+	SharedTeamIds           []string `json:"shared_team_ids"`
+	PendingConnectedTeamIds []any    `json:"pending_connected_team_ids"`
+	IsMember                bool     `json:"is_member"`
+	Topic                   Topic    `json:"topic"`
+	Purpose                 Purpose  `json:"purpose"`
+	PreviousNames           []any    `json:"previous_names"`
+	NumMembers              int      `json:"num_members"`
+}
+type ResponseMetadata struct {
+	NextCursor string `json:"next_cursor"`
+}
+
+type SlackMessage struct {
+	Channel     string       `json:"channel"`
+	Text        string       `json:"text"`
+	Attachments []Attachment `json:"attachments"`
+}
+
+type Attachment struct {
+	Pretext string `json:"pretext"`
+	Text    string `json:"text"`
+}
 
 func (slack *SlackNotifier) Send(data SlackMessage) error {
 	channel, err := slack.getChannel()
@@ -69,4 +136,67 @@ func (s *SlackNotifier) getChannel() (string, error) {
 	}
 	log.Println(string(body))
 	return channel, errNotFound
+}
+
+func sendSlackStatusNotification(notification []byte, status Status) error {
+	var slack SlackNotifier
+	if err := json.Unmarshal(notification, &slack); err != nil {
+		return err
+	}
+	data := SlackMessage{
+		Text: "Uptime Status Update",
+		Attachments: []Attachment{
+			{
+				Pretext: status.Site,
+				Text:    status.URL,
+			},
+			{
+				Pretext: "Status",
+				Text:    status.Status,
+			},
+		},
+	}
+	return slack.Send(data)
+}
+
+func sendSlackTestNotification(notification []byte) error {
+	var slack SlackNotifier
+	if err := json.Unmarshal(notification, &slack); err != nil {
+		return err
+	}
+	data := SlackMessage{
+		Text: "Test Message",
+		Attachments: []Attachment{
+			{
+				Pretext: "Pretext",
+				Text:    "first message",
+			},
+			{
+				Pretext: "Pretext2",
+				Text:    "second messge",
+			},
+		},
+	}
+	return slack.Send(data)
+}
+
+func sendSlackCertExpiryNotification(notification []byte, status Status) error {
+	var slack SlackNotifier
+	if err := json.Unmarshal(notification, &slack); err != nil {
+		return err
+	}
+	data := SlackMessage{
+		Text: "Uptime Certificate Expiry",
+		Attachments: []Attachment{
+			{
+				Pretext: status.Site,
+				Text:    status.URL,
+			},
+			{
+				Pretext: "Cert Expiry",
+				Text:    strconv.Itoa(status.CertExpiry),
+			},
+		},
+	}
+	return slack.Send(data)
 }

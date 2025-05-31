@@ -24,11 +24,6 @@ func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
 
 func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 	defer wg.Done()
-	checker := getChecker(m.Type)
-	if checker == nil {
-		log.Println("no checker for", m.Name, m.Type)
-		return
-	}
 	frequency, err := time.ParseDuration(m.Freq)
 	if err != nil {
 		log.Printf("invalid frequency for monitor %s, %s, %v", m.Name, m.Freq, err)
@@ -44,23 +39,34 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 			log.Println(m.Name, "shutting down")
 			return
 		case <-ticker.C:
-			updateStatus(m, checker)
+			m.updateStatus()
 		case <-timer.C:
-			updateStatus(m, checker)
+			m.updateStatus()
 		}
 	}
 }
 
-func updateStatus(m *Monitor, check Checker) {
-	status := check(m)
-	if status.Status == m.Status.Status {
-		if status.Time.Sub(m.Status.Time) < time.Hour {
+func (m *Monitor) updateStatus() {
+	var same bool
+	newStatus := m.Check()
+	oldStatus, err := getStatus(m.Name)
+	if err != nil {
+		log.Println("get old Status", m.Name, err)
+	}
+	if newStatus.Status == oldStatus.Status {
+		if newStatus.Time.Sub(oldStatus.Time) < time.Hour {
+			same = true //nolint:ineffassign,wastedassign
 			log.Println("no change in last hour ... skipping", m.Name)
 			return
 		}
+	} else {
+		log.Println("status change", m.Name, "monitor status", oldStatus.Status, "checked status", newStatus.Status)
+		m.sendStatusNotification(newStatus)
 	}
-	m.Status = status
-	bytes, err := json.Marshal(&status)
+	if newStatus.CertExpiry < 10 && same {
+		m.sendCertExpiryNotification(newStatus)
+	}
+	bytes, err := json.Marshal(&newStatus)
 	if err != nil {
 		log.Println("json err", err)
 		return
@@ -69,21 +75,21 @@ func updateStatus(m *Monitor, check Checker) {
 		log.Println("update database", m.Name, err)
 		return
 	}
-	if err = addKey(status.Time.Format(time.RFC3339),
+	if err = addKey(newStatus.Time.Format(time.RFC3339),
 		[]string{"history", m.Name}, bytes); err != nil {
 		log.Println("update history", m.Name, err)
 	}
-	log.Println("status updated", m.Name, status.Status)
+	log.Println("status updated", m.Name, newStatus.Status)
 }
 
-func checkHTTP(m *Monitor) Status {
+func (m *Monitor) checkHTTP() Status {
 	s := Status{
 		Site: m.Name,
 		URL:  m.URL,
 		Time: time.Now(),
 	}
 	if m.Type != HTTP {
-		s.Status = "wrong type for http check" + m.Type.Name()
+		s.Status = "wrong type for http check" + string(m.Type)
 		return s
 	}
 	timeout, err := time.ParseDuration(m.Timeout)
@@ -108,11 +114,61 @@ func checkHTTP(m *Monitor) Status {
 	return s
 }
 
-func getChecker(t MonitorType) Checker {
-	switch t { //nolint:exhaustive
+func (m *Monitor) Check() Status {
+	switch m.Type {
 	case HTTP:
-		return checkHTTP
+		return m.checkHTTP()
 	default:
-		return nil
+		log.Println("unimplemented monitor check", m.Name, string(m.Type))
+		return Status{}
+	}
+}
+
+func (m *Monitor) sendStatusNotification(status Status) {
+	for _, n := range m.Notifiers {
+		kind, notification, err := getNotify(n)
+		if err != nil {
+			log.Println("get notification for monitor", m.Name, n, err)
+			return
+		}
+		switch kind {
+		case Slack:
+			err = sendSlackStatusNotification(notification, status)
+		case Discord:
+			err = sendDiscordStatusNotification(notification, status)
+		case MailGun:
+			err = sendMailGunStatusNotification(notification, status)
+		default:
+			err = errInvalidNoficationType
+		}
+		if err != nil {
+			log.Println("send status notification", err)
+		}
+		log.Println("sent", kind, "status nofication for", status.Site, status.URL, status.Status)
+	}
+}
+
+func (m *Monitor) sendCertExpiryNotification(status Status) {
+	for _, n := range m.Notifiers {
+		kind, notification, err := getNotify(n)
+		if err != nil {
+			log.Println("get notification for monitor", m.Name, n, err)
+			return
+		}
+		switch kind {
+		case Slack:
+			err = sendSlackCertExpiryNotification(notification, status)
+		case Discord:
+			err = sendDiscordCertExpiryNotification(notification, status)
+		case MailGun:
+			err = sendMailGunCertExpiryNotification(notification, status)
+		default:
+			err = errInvalidNoficationType
+		}
+		if err != nil {
+			log.Println("send cert notification", err)
+			return
+		}
+		log.Println("sent", kind, "certification expired notification for", status.Site)
 	}
 }

@@ -2,20 +2,15 @@ version: "2"
 linters:
   default: all
   disable:
+    - ireturn
     - contextcheck
     - err113
-    - gocritic
     - godot
-    - errcheck
     - exhaustive
     - tagliatelle
-    - godox
     - fatcontext
     - noctx
-    - paralleltest
-    - predeclared
     - mnd
-    - forcetypeassert
     - musttag
     - revive
     - gosmopolitan
@@ -24,7 +19,6 @@ linters:
     - gochecknoglobals
     - exhaustruct
     - depguard
-    - forbidigo
     - nlreturn
     - wsl
   exclusions:
