@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"maragu.dev/gomponents"
-	"maragu.dev/gomponents/components"
 	"maragu.dev/gomponents/html"
 )
 
@@ -53,18 +52,6 @@ func checkbox(name string, checked bool) gomponents.Node {
 		html.Name(name),
 		gomponents.If(checked, gomponents.Attr("checked", "true")),
 	)
-}
-
-func navbar(authenticated bool, currentPath string) gomponents.Node {
-	return html.Nav(
-		navbarLink("/", "Home", currentPath),
-		navbarLink("/about", "About", currentPath),
-		gomponents.If(authenticated, navbarLink("/profile", "Profile", currentPath)),
-	)
-}
-
-func navbarLink(href, name, currentPath string) gomponents.Node {
-	return html.A(html.Href(href), components.Classes{"is-active": currentPath == href}, gomponents.Text(name))
 }
 
 func inputTableRow(label, name, kind, value, size string) gomponents.Node {
@@ -217,32 +204,4 @@ func radioGroup(label, name string, radios []Radio) gomponents.Node {
 		html.Td(html.Label(html.For(name), gomponents.Text(label))),
 		html.Td(gomponents.Group(inputs)),
 	)
-}
-
-func hiddenDiv(id, header string, data [][]string) []gomponents.Node {
-	rows := []gomponents.Node{}
-	for _, x := range data {
-		row := []gomponents.Node{
-			html.Br(),
-			html.Label(html.For(x[0]), gomponents.Text(x[1])),
-			html.Input(html.Name(x[0]), html.Type("text"), gomponents.Attr("size", "40")),
-		}
-		rows = append(rows, row...)
-	}
-	return rows
-}
-
-func togglePass(id string) gomponents.Group {
-	return gomponents.Group{
-		html.Label(html.For("showpass"), gomponents.Text("Show"), gomponents.Attr("onclick", "togglePass("+id+")")),
-		html.Script(gomponents.Raw(
-			`function togglePass(id){
-				var x = document.getElementById(id);
-				if (x.type == "password") {
-					x.type = "text";
-				} else {
-					x.type = "password"; 
-				}
-			}`)),
-	}
 }

@@ -263,17 +263,9 @@ func displayError(w http.ResponseWriter, err error) {
 	}
 }
 
-func isAdmin(r *http.Request) bool {
-	session, err := sessionData(r)
-	if err != nil {
-		return false
-	}
-	return session.Admin
-}
-
 func newMonitor(w http.ResponseWriter, r *http.Request) {
 	notifications := getAllNotifications()
-	var notifyCheckboxes []gomponents.Node
+	notifyCheckboxes := make([]gomponents.Node, 0, len(notifications)+1)
 	for _, n := range notifications {
 		checkbox := html.Input(
 			html.Type("checkbox"),
@@ -363,7 +355,7 @@ func createMonitor(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func editMonitor(w http.ResponseWriter, r *http.Request) {
+func editMonitor(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 	site := r.PathValue("site")
 	monitor, err := getMonitor(site)
 	if err != nil {
@@ -371,7 +363,7 @@ func editMonitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notifications := getAllNotifications()
-	var notifyCheckboxes []gomponents.Node
+	notifyCheckboxes := make([]gomponents.Node, 0, len(notifications)+1)
 	for _, n := range notifications {
 		checkbox := html.Input(
 			html.Type("checkbox"),
@@ -620,7 +612,7 @@ func notifications(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newNotification(w http.ResponseWriter, r *http.Request) {
+func newNotification(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 	if err := layoutExtra("New Notification", []gomponents.Node{
 		html.H1(gomponents.Text("New Notifications")),
 		html.Form(
@@ -757,7 +749,7 @@ func createNotification(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
-func displayEditnotification(w http.ResponseWriter, r *http.Request) {
+func displayEditnotification(w http.ResponseWriter, r *http.Request) { //nolint:cyclop,funlen
 	notify := r.PathValue("notify")
 	notifyType, notification, err := getNotify(notify)
 	if err != nil {
@@ -824,7 +816,6 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) {
 	}).Render(w); err != nil {
 		log.Println("render err", err)
 	}
-
 }
 
 func editNotification(w http.ResponseWriter, r *http.Request) {
@@ -887,7 +878,7 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func editSMSNotification(w http.ResponseWriter, r *http.Request) {
+func editSMSNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
 	if err := layout("Edit Notification", []gomponents.Node{
 		html.H2(gomponents.Text("Not Implemented")),
 	}).Render(w); err != nil {
@@ -895,7 +886,7 @@ func editSMSNotification(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func editEmailNotification(w http.ResponseWriter, r *http.Request) {
+func editEmailNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
 	if err := layout("Edit Notification", []gomponents.Node{
 		html.H2(gomponents.Text("Not Implemented")),
 	}).Render(w); err != nil {

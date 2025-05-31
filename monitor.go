@@ -55,7 +55,7 @@ func (m *Monitor) updateStatus() {
 	}
 	if newStatus.Status == oldStatus.Status {
 		if newStatus.Time.Sub(oldStatus.Time) < time.Hour {
-			same = true
+			same = true //nolint:ineffassign,wastedassign
 			log.Println("no change in last hour ... skipping", m.Name)
 			return
 		}

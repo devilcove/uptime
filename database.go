@@ -27,7 +27,7 @@ var (
 	errNoKey          = errors.New("no such key")
 	errUser           = errors.New("user exists")
 	errNoUser         = errors.New("no such user")
-	errNotImplemented = errors.New("not implemented")
+	errNotImplemented = errors.New("not implemented") //nolint:unused
 )
 
 // openDB Opens, creates if non-existent, db file in XDG_DATA_HOME/uptime.db
@@ -138,8 +138,8 @@ func getAllStatus() ([]Status, error) {
 func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
-	max := []byte(time.Now().Format(time.RFC3339))
-	min := []byte{}
+	max := []byte(time.Now().Format(time.RFC3339)) //nolint:predeclared
+	min := []byte{}                                //nolint:predeclared
 	switch frame {
 	case Hour:
 		min = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))

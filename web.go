@@ -18,7 +18,7 @@ const (
 
 var store *sessions.CookieStore //nolint:gochecknoglobals
 
-func web(ctx context.Context, wg *sync.WaitGroup) {
+func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 	defer wg.Done()
 	store = sessions.NewCookieStore(randBytes(sessionBytes))
 	store.MaxAge(cookieAge)
