@@ -1,54 +1,54 @@
 package main
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	"github.com/gorilla/sessions"
+)
+
+const (
+	cookieName  = "devilcove-uptime"
+	httpAddr    = ":8090"
+	DiscordRed  = 14177041
+	DiscordBlue = 1127128
+	centerStyle = "text-align:center; margin-left:auto; margin-right:auto;"
+)
 
 type (
-	MonitorType int
-	NotifyType  int
+	MonitorType string
+	NotifyType  string
 )
 
 const (
-	HTTP MonitorType = iota
-	PING
-	TCP
+	HTTP MonitorType = "http"
+	PING MonitorType = "ping"
+	TCP  MonitorType = "tcp"
 )
 
 const (
-	Slack NotifyType = iota
-	Discord
-	Email
-	SMS
+	Slack   NotifyType = "slack"
+	Discord NotifyType = "discord"
+	MailGun NotifyType = "mailgun(email)"
+	Email   NotifyType = "email"
+	SMS     NotifyType = "sms"
 )
 
-var MonitorTypeNames = map[MonitorType]string{
-	HTTP: "http",
-	PING: "ping",
-	TCP:  "tcp",
-}
+type TimeFrame string
 
-var NotifyTypeNames = map[NotifyType]string{
-	Slack:   "slack",
-	Discord: "discord",
-	Email:   "email",
-	SMS:     "sms",
-}
+const (
+	Hour  TimeFrame = "Hour"
+	Day   TimeFrame = "Day"
+	Week  TimeFrame = "Week"
+	Month TimeFrame = "Month"
+	Year  TimeFrame = "Year"
+)
 
-var NotifyTypeBytes = map[NotifyType][]byte{
-	Slack:   {0},
-	Discord: {1},
-	Email:   {2},
-	SMS:     {3},
+type User struct {
+	Name  string
+	Pass  string
+	Admin bool
 }
-
-func (t MonitorType) Name() string {
-	return MonitorTypeNames[t]
-}
-
-func (t NotifyType) Name() string {
-	return NotifyTypeNames[t]
-}
-
-type Checker func(*Monitor) Status
 
 type Status struct {
 	Site         string
@@ -66,52 +66,8 @@ type Monitor struct {
 	Freq      string
 	Name      string
 	Timeout   string
-	Status    Status
+	StatusOK  int
 	Notifiers []string
-}
-
-type TimeFrame int
-
-const (
-	Hour TimeFrame = iota
-	Day
-	Week
-	Month
-	Year
-)
-
-var TimeFrameNames = map[TimeFrame]string{
-	Hour:  "Hour",
-	Day:   "Day",
-	Week:  "Week",
-	Month: "Month",
-	Year:  "Year",
-}
-
-func (t TimeFrame) Name() string {
-	return TimeFrameNames[t]
-}
-
-type StatusData struct {
-	Title string
-	User  string
-	Admin bool
-	Page  string
-	Site  string
-	Data  []any
-}
-
-type User struct {
-	Name  string
-	Pass  string
-	Admin bool
-}
-
-// slack types
-type SlackNotifier struct {
-	Name    string
-	Token   string
-	Channel string
 }
 
 type Notification struct {
@@ -120,63 +76,20 @@ type Notification struct {
 	Notification any
 }
 
-type ChannelResponse struct {
-	Ok               bool             `json:"ok"`
-	Channels         []Channels       `json:"channels"`
-	ResponseMetadata ResponseMetadata `json:"response_metadata"`
+type Session struct {
+	User     string
+	LoggedIn bool
+	Admin    bool
+	Session  *sessions.Session
 }
 
-type Topic struct {
-	Value   string `json:"value"`
-	Creator string `json:"creator"`
-	LastSet int    `json:"last_set"`
-}
-type Purpose struct {
-	Value   string `json:"value"`
-	Creator string `json:"creator"`
-	LastSet int    `json:"last_set"`
-}
-type Channels struct {
-	ID                      string   `json:"id"`
-	Name                    string   `json:"name"`
-	IsChannel               bool     `json:"is_channel"`
-	IsGroup                 bool     `json:"is_group"`
-	IsIm                    bool     `json:"is_im"`
-	IsMpim                  bool     `json:"is_mpim"`
-	IsPrivate               bool     `json:"is_private"`
-	Created                 int      `json:"created"`
-	IsArchived              bool     `json:"is_archived"`
-	IsGeneral               bool     `json:"is_general"`
-	Unlinked                int      `json:"unlinked"`
-	NameNormalized          string   `json:"name_normalized"`
-	IsShared                bool     `json:"is_shared"`
-	IsOrgShared             bool     `json:"is_org_shared"`
-	IsPendingExtShared      bool     `json:"is_pending_ext_shared"`
-	PendingShared           []any    `json:"pending_shared"`
-	ContextTeamID           string   `json:"context_team_id"`
-	Updated                 int64    `json:"updated"`
-	ParentConversation      any      `json:"parent_conversation"`
-	Creator                 string   `json:"creator"`
-	IsExtShared             bool     `json:"is_ext_shared"`
-	SharedTeamIds           []string `json:"shared_team_ids"`
-	PendingConnectedTeamIds []any    `json:"pending_connected_team_ids"`
-	IsMember                bool     `json:"is_member"`
-	Topic                   Topic    `json:"topic"`
-	Purpose                 Purpose  `json:"purpose"`
-	PreviousNames           []any    `json:"previous_names"`
-	NumMembers              int      `json:"num_members"`
-}
-type ResponseMetadata struct {
-	NextCursor string `json:"next_cursor"`
+type Radio struct {
+	Value   string
+	Label   string
+	Checked bool
 }
 
-type SlackMessage struct {
-	Channel     string       `json:"channel"`
-	Text        string       `json:"text"`
-	Attachments []Attachment `json:"attachments"`
-}
-
-type Attachment struct {
-	Pretext string `json:"pretext"`
-	Text    string `json:"text"`
-}
+var (
+	errInvalidNoficationType = errors.New("invalid notification type")
+	errNotFound              = errors.New("not found")
+)
