@@ -53,7 +53,7 @@ func Logger(next http.Handler) http.Handler {
 		next.ServeHTTP(&rec, r)
 		remote := r.RemoteAddr
 		if r.Header.Get("X-Forwarded-For") != "" {
-			remote = r.Header.Get("X-Forwared-For")
+			remote = r.Header.Get("X-Forwarded-For")
 		}
 		log.Println(remote, r.Method, r.Host, r.URL.Path, rec.status, r.UserAgent())
 	})
