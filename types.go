@@ -93,3 +93,17 @@ var (
 	errInvalidNoficationType = errors.New("invalid notification type")
 	errNotFound              = errors.New("not found")
 )
+
+type MonitorDisplay struct {
+	Name          string
+	DisplayStatus bool
+	PerCent       float64
+	AvgResponse   int64
+	History       []History
+	Status        Status
+}
+
+type History struct {
+	Status bool
+	Time   time.Time
+}

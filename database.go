@@ -503,3 +503,39 @@ func getAllNotifications() []Notification {
 	}
 	return notifications
 }
+
+func getAllMonitorsForDisplay() []MonitorDisplay {
+	var display []MonitorDisplay
+	monitors, _ := getMonitors()
+	for _, monitor := range monitors {
+		disp := MonitorDisplay{
+			Name: monitor.Name,
+		}
+		disp.Status, _ = getStatus(monitor.Name)
+		history, _ := getHistory([]string{"history", monitor.Name}, Day)
+		slices.Reverse(history)
+		log.Println("history for", monitor.Name, len(history))
+		var count, good float64
+		var times int64
+		for _, hist := range history {
+			count++
+			beat := History{
+				Time: hist.Time,
+			}
+			if hist.StatusCode == monitor.StatusOK {
+				beat.Status = true
+				good++
+			}
+			disp.History = append(disp.History, beat)
+			times = times + hist.ResponseTime.Milliseconds()
+		}
+		disp.PerCent = good / count
+		disp.AvgResponse = times / int64(len(history))
+		log.Println(disp.Name, disp.AvgResponse, times, len(history))
+		if disp.History[0].Status {
+			disp.DisplayStatus = true
+		}
+		display = append(display, disp)
+	}
+	return display
+}

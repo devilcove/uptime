@@ -4,176 +4,215 @@ import (
 	"strconv"
 	"time"
 
-	"maragu.dev/gomponents"
-	"maragu.dev/gomponents/html"
+	g "maragu.dev/gomponents"
+	h "maragu.dev/gomponents/html"
 )
 
-func container(center bool, children ...gomponents.Node) gomponents.Node {
+func container(center bool, children ...g.Node) g.Node {
 	style := ""
 	if center {
 		style = "text-align:center; margin-left:auto; margin-right:auto"
 	}
-	return html.Div(
-		html.Style(style),
-		gomponents.Group(children),
+	return h.Div(
+		h.Style(style),
+		g.Group(children),
 	)
 }
 
-func linkButton(href, text string) gomponents.Node {
-	return html.Button(
-		html.Type("button"),
-		gomponents.Attr("onclick", "goTo('"+href+"')"),
-		gomponents.Text(text),
+func linkButton(href, text string) g.Node {
+	return h.Button(
+		h.Type("button"),
+		g.Attr("onclick", "goTo('"+href+"')"),
+		g.Text(text),
+		h.Title(href),
 	)
 }
 
-func submitButton(name string) gomponents.Node {
-	return html.Button(
-		html.Type("submit"),
-		gomponents.Text(name),
+func submitButton(name string) g.Node {
+	return h.Button(
+		h.Type("submit"),
+		g.Text(name),
 	)
 }
 
-func formButton(name, action string) gomponents.Node {
-	return html.Form(
-		html.Action(action),
-		html.Method("post"),
-		gomponents.Attr("onsubmit", "return confirm('confirm')"),
-		html.Button(
-			html.Type("submit"),
-			gomponents.Text(name),
+func formButton(name, action string) g.Node {
+	return h.Form(
+		h.Action(action),
+		h.Method("post"),
+		g.Attr("onsubmit", "return confirm('confirm')"),
+		h.Button(
+			h.Type("submit"),
+			g.Text(name),
 		),
 	)
 }
 
-func checkbox(name string, checked bool) gomponents.Node {
-	return html.Input(
-		html.Type("checkbox"),
-		html.Name(name),
-		gomponents.If(checked, gomponents.Attr("checked", "true")),
+func checkbox(name string, checked bool) g.Node {
+	return h.Input(
+		h.Type("checkbox"),
+		h.Name(name),
+		g.If(checked, g.Attr("checked", "true")),
 	)
 }
 
-func inputTableRow(label, name, kind, value, size string) gomponents.Node {
-	return html.Tr(
-		html.Td(html.Label(html.For(name), gomponents.Text(label))),
-		html.Td(html.Input(
-			html.Name(name), html.ID(name), html.Type(kind), html.Value(value),
-			gomponents.Attr("size", size), gomponents.Text(name))),
+func inputTableRow(label, name, kind, value, size string) g.Node {
+	return h.Tr(
+		h.Td(h.Label(h.For(name), g.Text(label))),
+		h.Td(h.Input(
+			h.Name(name), h.ID(name), h.Type(kind), h.Value(value),
+			g.Attr("size", size), g.Text(name))),
 	)
 }
 
-func userTable(users []User) gomponents.Node {
-	rows := []gomponents.Node{}
-	header := html.Tr(
-		html.Th(gomponents.Text("Name")),
-		html.Th(gomponents.Attr("colspan=\"2\""), gomponents.Text("Actions")),
+func userTable(users []User) g.Node {
+	rows := []g.Node{}
+	header := h.Tr(
+		h.Th(g.Text("Name")),
+		h.Th(g.Attr("colspan=\"2\""), g.Text("Actions")),
 	)
 	rows = append(rows, header)
 	for _, user := range users {
-		row := html.Tr(
-			html.Td(html.Label(gomponents.Text(user.Name))),
-			html.Td(linkButton("/user/"+user.Name, "Edit")),
-			html.Td(formButton("Delete", "/user/delete/"+user.Name)),
+		row := h.Tr(
+			h.Td(h.Label(g.Text(user.Name))),
+			h.Td(linkButton("/user/"+user.Name, "Edit")),
+			h.Td(formButton("Delete", "/user/delete/"+user.Name)),
 		)
 		rows = append(rows, row)
 	}
-	return html.Table(
-		gomponents.Group(rows),
+	return h.Table(
+		g.Group(rows),
 	)
 }
 
-func statusTable(status []Status) gomponents.Node {
-	rows := []gomponents.Node{}
-	header := html.Tr(
-		html.Th(gomponents.Text("Site")),
-		html.Th(gomponents.Text("Status")),
-		html.Th(gomponents.Text("Code")),
-		html.Th(gomponents.Text("Time")),
-		html.Th(gomponents.Text("Response Time")),
-		html.Th(gomponents.Text("Cert Expiry")),
-		html.Th(gomponents.Attr("colspan=\"2\""), gomponents.Text("Actions")),
+func statusTableOld(status []Status) g.Node {
+	rows := []g.Node{}
+	header := h.Tr(
+		h.Th(g.Text("Site")),
+		h.Th(g.Text("Status"), h.Title("Status Response")),
+		h.Th(g.Text("Code")),
+		h.Th(g.Text("Time")),
+		h.Th(g.Text("Response Time")),
+		h.Th(g.Text("Cert Expiry"), h.Title("Days")),
+		h.Th(g.Attr("colspan=\"2\""), g.Text("Actions")),
 	)
 	rows = append(rows, header)
 	for _, s := range status {
 		link := "/monitor/history/" + s.Site + "/day"
 		deleteLink := "/monitor/delete/" + s.Site
 		editLink := "/monitor/edit/" + s.Site
-		row := html.Tr(
-			html.Td(html.A(html.Href(link), gomponents.Text(s.Site))),
-			html.Td(gomponents.Text(s.Status)),
-			html.Td(gomponents.Text(strconv.Itoa(s.StatusCode))),
-			html.Td(gomponents.Text(s.Time.Local().Format(time.RFC822))),
-			html.Td(gomponents.Text(s.ResponseTime.Round(time.Millisecond).String())),
-			html.Td(gomponents.Text(strconv.Itoa(s.CertExpiry))),
-			html.Td(linkButton(editLink, "Edit")),
-			html.Td(linkButton(deleteLink, "Delete")),
+		row := h.Tr(
+			h.Td(h.A(h.Href(link), g.Text(s.Site))),
+			h.Td(g.Text(s.Status)),
+			h.Td(g.Text(strconv.Itoa(s.StatusCode))),
+			h.Td(g.Text(s.Time.Local().Format(time.RFC822))),
+			h.Td(g.Text(s.ResponseTime.Round(time.Millisecond).String())),
+			h.Td(g.Text(strconv.Itoa(s.CertExpiry))),
+			h.Td(linkButton(editLink, "Edit")),
+			h.Td(linkButton(deleteLink, "Delete")),
 		)
 		rows = append(rows, row)
 	}
-	return html.Table(
-		gomponents.Group(rows),
+	return h.Table(
+		g.Group(rows),
 	)
 }
 
-func historyTable(history []Status) gomponents.Node {
-	rows := []gomponents.Node{}
-	header := html.Tr(
-		html.Th(gomponents.Text("Site")),
-		html.Th(gomponents.Text("Status")),
-		html.Th(gomponents.Text("Code")),
-		html.Th(gomponents.Text("Time")),
-		html.Th(gomponents.Text("Response Time")),
-		html.Th(gomponents.Text("Cert Expiry")),
+func statusTable() g.Node {
+	monitors := getAllMonitorsForDisplay()
+	rows := []g.Node{}
+
+	header := h.Tr(
+		h.Th(g.Text("Name")),
+		h.Th(g.Text("Status")),
+		h.Th(g.Text("Time")),
+		h.Th(g.Text("Avg Response")),
+		h.Th(g.Text("Response Time")),
+		h.Th(g.Text("Cert Expiry")),
+		h.Th(g.Text("Actions"), g.Attr("colspan", "3")),
+	)
+	rows = append(rows, header)
+
+	for _, m := range monitors {
+		row := h.Tr(
+			h.Td(g.Text(m.Name)),
+			h.Td(h.Button(h.Style("background:"+"green"),
+				g.Text(strconv.FormatFloat(m.PerCent, 'f', 2, 64)+" %")),
+				h.Title("last 24 hours"),
+			),
+			h.Td(g.Text(m.Status.Time.Format(time.RFC822))),
+			h.Td(g.Text(strconv.Itoa(int(m.AvgResponse))+"ms")),
+			h.Td(g.Text(m.Status.ResponseTime.Round(time.Millisecond).String())),
+			h.Td(g.Text(strconv.Itoa(m.Status.CertExpiry))),
+			h.Td(linkButton("/monitor/history/"+m.Name+"/day", "History")),
+			h.Td(linkButton("/monitor/edit/"+m.Name, "Edit")),
+			h.Td(linkButton("/monitor/delete/"+m.Name, "Delete")),
+		)
+		rows = append(rows, row)
+	}
+
+	return h.Table(
+		g.Group(rows),
+	)
+}
+
+func historyTable(history []Status) g.Node {
+	rows := []g.Node{}
+	header := h.Tr(
+		h.Th(g.Text("Site")),
+		h.Th(g.Text("Status")),
+		h.Th(g.Text("Code")),
+		h.Th(g.Text("Time")),
+		h.Th(g.Text("Response Time")),
+		h.Th(g.Text("Cert Expiry")),
 	)
 	rows = append(rows, header)
 	for _, s := range history {
-		row := html.Tr(
-			html.Td(gomponents.Text(s.Site)),
-			html.Td(gomponents.Text(s.Status)),
-			html.Td(gomponents.Text(strconv.Itoa(s.StatusCode))),
-			html.Td(gomponents.Text(s.Time.Local().Format(time.RFC822))),
-			html.Td(gomponents.Text(s.ResponseTime.Round(time.Millisecond).String())),
-			html.Td(gomponents.Text(strconv.Itoa(s.CertExpiry))),
+		row := h.Tr(
+			h.Td(g.Text(s.Site)),
+			h.Td(g.Text(s.Status)),
+			h.Td(g.Text(strconv.Itoa(s.StatusCode))),
+			h.Td(g.Text(s.Time.Local().Format(time.RFC822))),
+			h.Td(g.Text(s.ResponseTime.Round(time.Millisecond).String())),
+			h.Td(g.Text(strconv.Itoa(s.CertExpiry))),
 		)
 		rows = append(rows, row)
 	}
-	return html.Table(
-		gomponents.Group(rows),
+	return h.Table(
+		g.Group(rows),
 	)
 }
 
-func newUserDialog() gomponents.Node {
-	return html.Dialog(
-		gomponents.Attr("id", "new"),
-		html.H2(gomponents.Text("New User")),
-		html.Form(
-			html.Method("post"),
-			html.Action("/user/add"),
-			html.Table(
+func newUserDialog() g.Node {
+	return h.Dialog(
+		g.Attr("id", "new"),
+		h.H2(g.Text("New User")),
+		h.Form(
+			h.Method("post"),
+			h.Action("/user/add"),
+			h.Table(
 				inputTableRow("Name", "name", "text", "", "40"),
 				inputTableRow("Pass", "pass", "password", "", "40"),
 			),
-			html.Label(html.For("showpass"), gomponents.Text("Show Password"), gomponents.Attr("onclick", "togglePass();")),
-			html.Br(),
-			html.Label(
-				gomponents.Attr("for", "admin"),
-				gomponents.Text("Admin"),
+			h.Label(h.For("showpass"), g.Text("Show Password"), g.Attr("onclick", "togglePass();")),
+			h.Br(),
+			h.Label(
+				g.Attr("for", "admin"),
+				g.Text("Admin"),
 			),
-			html.Input(
-				gomponents.Attr("name", "admin"),
-				gomponents.Attr("type", "checkbox"),
+			h.Input(
+				g.Attr("name", "admin"),
+				g.Attr("type", "checkbox"),
 			),
-			html.Br(),
-			html.Br(),
-			html.Button(
-				gomponents.Attr("type", "button"),
-				gomponents.Attr("onclick", "document.getElementById('new').close()"),
-				gomponents.Text("Cancel"),
+			h.Br(),
+			h.Br(),
+			h.Button(
+				g.Attr("type", "button"),
+				g.Attr("onclick", "document.getElementById('new').close()"),
+				g.Text("Cancel"),
 			),
 			submitButton("Create"),
 		),
-		html.Script(gomponents.Raw(
+		h.Script(g.Raw(
 			`function togglePass() {
 				var x = document.getElementById('pass');
 				if (x.type == "password"){
@@ -185,23 +224,23 @@ func newUserDialog() gomponents.Node {
 	)
 }
 
-func radioGroup(label, name string, radios []Radio) gomponents.Node {
-	inputs := []gomponents.Node{}
+func radioGroup(label, name string, radios []Radio) g.Node {
+	inputs := []g.Node{}
 	for _, radio := range radios {
-		input := html.Input(
-			html.Name(name),
-			html.ID(name),
-			html.Type("radio"),
-			html.Required(),
-			html.Value(radio.Value),
-			gomponents.If(radio.Checked, html.Checked()),
-			gomponents.Attr("onclick", "displayExtra('"+radio.Value+"')"),
+		input := h.Input(
+			h.Name(name),
+			h.ID(name),
+			h.Type("radio"),
+			h.Required(),
+			h.Value(radio.Value),
+			g.If(radio.Checked, h.Checked()),
+			g.Attr("onclick", "displayExtra('"+radio.Value+"')"),
 		)
 		inputs = append(inputs, input)
-		inputs = append(inputs, gomponents.Text(radio.Label))
+		inputs = append(inputs, g.Text(radio.Label))
 	}
-	return html.Tr(
-		html.Td(html.Label(html.For(name), gomponents.Text(label))),
-		html.Td(gomponents.Group(inputs)),
+	return h.Tr(
+		h.Td(h.Label(h.For(name), g.Text(label))),
+		h.Td(g.Group(inputs)),
 	)
 }
