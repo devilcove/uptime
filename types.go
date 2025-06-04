@@ -42,6 +42,7 @@ const (
 	Week  TimeFrame = "Week"
 	Month TimeFrame = "Month"
 	Year  TimeFrame = "Year"
+	All   TimeFrame = "All"
 )
 
 type User struct {
@@ -106,4 +107,25 @@ type MonitorDisplay struct {
 type History struct {
 	Status bool
 	Time   time.Time
+}
+
+type Details struct {
+	Status     []Status
+	Response24 int
+	Response30 int
+	Uptime24   float64
+	Uptime30   float64
+}
+
+func compact(status []Status) []Status {
+	var compact []Status
+	compact = append(compact, status[0])
+	cursor := 0
+	for _, s := range status[1:] {
+		if s.StatusCode != compact[cursor].StatusCode {
+			compact = append(compact, s)
+			cursor++
+		}
+	}
+	return compact
 }

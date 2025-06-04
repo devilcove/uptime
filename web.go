@@ -47,6 +47,7 @@ func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 	user.HandleFunc("POST /{user}", updateUser)
 
 	monitor := Router("/monitor", auth)
+	monitor.HandleFunc("GET /details/{site}", details)
 	monitor.HandleFunc("GET /new", newMonitor)
 	monitor.HandleFunc("POST /new", createMonitor)
 	monitor.HandleFunc("GET /delete/{site}", deleteSite)

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -927,4 +928,59 @@ func editMailgunNotification(w http.ResponseWriter, r *http.Request) {
 	}
 	reset <- syscall.SIGHUP
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
+}
+
+func details(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	history, err := getHistory([]string{"history", site}, All)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	history = compact(history)
+	details, err := getHistoryDetails(monitor.Name, monitor.StatusOK)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	log.Println("history", len(history))
+	if err := layout("Details", []g.Node{
+		h.H2(g.Text(site)),
+		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
+		h.Div(
+			linkButton("/monitor/history/"+site+"/day", "History"),
+			linkButton("/monitor/pause/"+site, "Pause"),
+			linkButton("/monitor/edit/"+site, "Edit"),
+			linkButton("/monitor/delete/"+site, "Delete"),
+			linkButton("/", "Home"),
+		),
+		h.Br(),
+		h.Table(
+			h.Tr(
+				h.Th(g.Text("Current Response")),
+				h.Th(g.Text("24 Hour Avg Response")),
+				h.Th(g.Text("30 Day Avg Response")),
+				h.Th(g.Text("24 Hour Uptime")),
+				h.Th(g.Text("30 Day Uptime")),
+				h.Th(g.Text("Certificate Expiry")),
+			),
+			h.Tr(
+				h.Td(g.Text(history[0].ResponseTime.Round(time.Millisecond).String())),
+				h.Td(g.Text(strconv.Itoa(details.Response24)+" ms")),
+				h.Td(g.Text(strconv.Itoa(details.Response30)+" ms")),
+				h.Td(g.Text(strconv.FormatFloat(details.Uptime24, 'f', 2, 64)+" %")),
+				h.Td(g.Text(strconv.FormatFloat(details.Uptime30, 'f', 2, 64)+" %")),
+				h.Td(g.Text(strconv.Itoa(history[0].CertExpiry)+" days")),
+			),
+		),
+		h.Br(),
+		compactHistoryTable(history),
+	}).Render(w); err != nil {
+		log.Println("render err", err)
+	}
 }

@@ -138,8 +138,8 @@ func getAllStatus() ([]Status, error) {
 func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
-	max := []byte(time.Now().Format(time.RFC3339)) //nolint:predeclared
-	min := []byte{}                                //nolint:predeclared
+	max := []byte(time.Now().Format(time.RFC3339))  //nolint:predeclared
+	min := []byte(time.Time{}.Format(time.RFC3339)) //nolint:predeclared
 	switch frame {
 	case Hour:
 		min = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
@@ -166,7 +166,63 @@ func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 		}
 		return nil
 	})
+	slices.Reverse(stats)
 	return stats, err
+}
+
+func getHistoryDetails(monitor string, ok int) (Details, error) {
+	var details Details
+	var err error
+	details.Status, err = getHistory([]string{"history", monitor}, All)
+	if err != nil {
+		return details, err
+	}
+	details.Response24, details.Uptime24, err = getStats(monitor, Day, ok)
+	if err != nil {
+		return details, err
+	}
+	details.Response30, details.Uptime30, err = getStats(monitor, Month, ok)
+	return details, err
+}
+
+func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) {
+	var good, total float64
+	var status Status
+	var responseTime int
+
+	first := []byte(time.Time{}.Format(time.RFC3339))
+	now := []byte(time.Now().Format(time.RFC3339))
+	switch timeFrame {
+	case Hour:
+		first = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
+	case Day:
+		first = []byte(time.Now().Add(-time.Hour * 24).Format(time.RFC3339))
+	case Month:
+		first = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
+	case Year:
+		first = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
+	case Week:
+		first = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
+	}
+	if err := db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("history"))
+		history := bucket.Bucket([]byte(monitor))
+		c := history.Cursor()
+		for k, v := c.Seek(first); k != nil && bytes.Compare(k, now) <= 0; k, v = c.Next() {
+			if err := json.Unmarshal(v, &status); err != nil {
+				return err
+			}
+			total++
+			if status.StatusCode == ok {
+				good++
+			}
+			responseTime = responseTime + int(status.ResponseTime.Milliseconds())
+		}
+		return nil
+	}); err != nil {
+		return 0, 0, err
+	}
+	return responseTime / int(total), good / total * 100, nil
 }
 
 // getMonitors returns array of all Monitor structs

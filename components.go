@@ -84,39 +84,6 @@ func userTable(users []User) g.Node {
 	)
 }
 
-func statusTableOld(status []Status) g.Node {
-	rows := []g.Node{}
-	header := h.Tr(
-		h.Th(g.Text("Site")),
-		h.Th(g.Text("Status"), h.Title("Status Response")),
-		h.Th(g.Text("Code")),
-		h.Th(g.Text("Time")),
-		h.Th(g.Text("Response Time")),
-		h.Th(g.Text("Cert Expiry"), h.Title("Days")),
-		h.Th(g.Attr("colspan=\"2\""), g.Text("Actions")),
-	)
-	rows = append(rows, header)
-	for _, s := range status {
-		link := "/monitor/history/" + s.Site + "/day"
-		deleteLink := "/monitor/delete/" + s.Site
-		editLink := "/monitor/edit/" + s.Site
-		row := h.Tr(
-			h.Td(h.A(h.Href(link), g.Text(s.Site))),
-			h.Td(g.Text(s.Status)),
-			h.Td(g.Text(strconv.Itoa(s.StatusCode))),
-			h.Td(g.Text(s.Time.Local().Format(time.RFC822))),
-			h.Td(g.Text(s.ResponseTime.Round(time.Millisecond).String())),
-			h.Td(g.Text(strconv.Itoa(s.CertExpiry))),
-			h.Td(linkButton(editLink, "Edit")),
-			h.Td(linkButton(deleteLink, "Delete")),
-		)
-		rows = append(rows, row)
-	}
-	return h.Table(
-		g.Group(rows),
-	)
-}
-
 func statusTable() g.Node {
 	monitors := getAllMonitorsForDisplay()
 	rows := []g.Node{}
@@ -128,7 +95,7 @@ func statusTable() g.Node {
 		h.Th(g.Text("Avg Response")),
 		h.Th(g.Text("Response Time")),
 		h.Th(g.Text("Cert Expiry")),
-		h.Th(g.Text("Actions"), g.Attr("colspan", "3")),
+		h.Th(g.Text("Actions")),
 	)
 	rows = append(rows, header)
 
@@ -143,9 +110,7 @@ func statusTable() g.Node {
 			h.Td(g.Text(strconv.Itoa(int(m.AvgResponse))+"ms")),
 			h.Td(g.Text(m.Status.ResponseTime.Round(time.Millisecond).String())),
 			h.Td(g.Text(strconv.Itoa(m.Status.CertExpiry))),
-			h.Td(linkButton("/monitor/history/"+m.Name+"/day", "History")),
-			h.Td(linkButton("/monitor/edit/"+m.Name, "Edit")),
-			h.Td(linkButton("/monitor/delete/"+m.Name, "Delete")),
+			h.Td(linkButton("/monitor/details/"+m.Name, "Details")),
 		)
 		rows = append(rows, row)
 	}
@@ -174,6 +139,31 @@ func historyTable(history []Status) g.Node {
 			h.Td(g.Text(s.Time.Local().Format(time.RFC822))),
 			h.Td(g.Text(s.ResponseTime.Round(time.Millisecond).String())),
 			h.Td(g.Text(strconv.Itoa(s.CertExpiry))),
+		)
+		rows = append(rows, row)
+	}
+	return h.Table(
+		g.Group(rows),
+	)
+}
+
+func compactHistoryTable(history []Status) g.Node {
+	rows := []g.Node{}
+	header := h.Tr(
+		h.Th(g.Text("Status")),
+		h.Th(g.Text("Time")),
+		h.Th(g.Text("Details")),
+	)
+	rows = append(rows, header)
+	for _, s := range history {
+		button := h.Button(g.Attr("style", "background-color:red"), g.Text("Down"))
+		if s.StatusCode == 200 {
+			button = h.Button(g.Attr("style", "background-color:green"), g.Text("Up"))
+		}
+		row := h.Tr(
+			h.Td(button),
+			h.Td(g.Text(s.Time.Local().Format(time.RFC822))),
+			h.Td(g.Text(s.Status)),
 		)
 		rows = append(rows, row)
 	}
