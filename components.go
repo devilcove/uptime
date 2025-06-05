@@ -147,7 +147,7 @@ func historyTable(history []Status) g.Node {
 	)
 }
 
-func compactHistoryTable(history []Status) g.Node {
+func compactHistoryTable(history []Status, statusOK int) g.Node {
 	rows := []g.Node{}
 	header := h.Tr(
 		h.Th(g.Text("Status")),
@@ -157,7 +157,7 @@ func compactHistoryTable(history []Status) g.Node {
 	rows = append(rows, header)
 	for _, s := range history {
 		button := h.Button(g.Attr("style", "background-color:red"), g.Text("Down"))
-		if s.StatusCode == 200 {
+		if s.StatusCode == statusOK {
 			button = h.Button(g.Attr("style", "background-color:green"), g.Text("Up"))
 		}
 		row := h.Tr(

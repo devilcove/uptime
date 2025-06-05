@@ -113,27 +113,6 @@ func getStatus(name string) (Status, error) {
 	return status, err
 }
 
-// getAllStatus returns array of status structs
-func getAllStatus() ([]Status, error) {
-	path := []string{"status"}
-	allStatus := []Status{}
-	status := Status{}
-	err := db.View(func(tx *bbolt.Tx) error {
-		bucket := getBucket(path, tx)
-		if err := bucket.ForEach(func(k, v []byte) error {
-			if err := json.Unmarshal(v, &status); err != nil {
-				return err
-			}
-			allStatus = append(allStatus, status)
-			return nil
-		}); err != nil {
-			return err
-		}
-		return nil
-	})
-	return allStatus, err
-}
-
 func purgeHistData(site, date string) error {
 	log.Println("purge data from", site, "before", date)
 	dateTime, err := time.Parse(time.DateOnly, date)
@@ -205,7 +184,7 @@ func getHistoryDetails(monitor string, ok int) (Details, error) {
 	return details, err
 }
 
-func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) {
+func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) { //nolint:cyclop
 	var good, total float64
 	var status Status
 	var responseTime int
@@ -236,7 +215,7 @@ func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error)
 			if status.StatusCode == ok {
 				good++
 			}
-			responseTime = responseTime + int(status.ResponseTime.Milliseconds())
+			responseTime += int(status.ResponseTime.Milliseconds())
 		}
 		return nil
 	}); err != nil {
@@ -584,7 +563,7 @@ func getAllNotifications() []Notification {
 }
 
 func getAllMonitorsForDisplay() []MonitorDisplay {
-	var display []MonitorDisplay
+	display := []MonitorDisplay{}
 	monitors, _ := getMonitors()
 	for _, monitor := range monitors {
 		disp := MonitorDisplay{
@@ -593,9 +572,6 @@ func getAllMonitorsForDisplay() []MonitorDisplay {
 		}
 		disp.Status, _ = getStatus(monitor.Name)
 		history, _ := getHistory([]string{"history", monitor.Name}, Day)
-		//slices.Reverse(history)
-		//history = compact(history)
-
 		var total, good float64
 		for i, hist := range history {
 			if i == 0 {

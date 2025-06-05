@@ -30,7 +30,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	if err := layout("Uptime", []g.Node{
 		h.H2(g.Text("Uptime Status")),
 		h.Br(nil),
-		linkButton("/monitor/new", "New Monitor"),
+		g.If(IsAdmin(r), linkButton("/monitor/new", "New Monitor")),
 		linkButton("notifications/", "Notifications"),
 		linkButton("/logs", "View Logs"),
 		linkButton("/logout", "Logout"),
@@ -556,8 +556,8 @@ func history(w http.ResponseWriter, r *http.Request) {
 			linkButton("/monitor/history/"+site+"/year", "year"),
 			linkButton("/monitor/history/"+site+"/all", "all time"),
 			linkButton("/", "Home"),
-			h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
-				g.Attr("onclick", "document.getElementById('purge').showModal()")),
+			g.If(IsAdmin(r), h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
+				g.Attr("onclick", "document.getElementById('purge').showModal()"))),
 		),
 		g.If(history == nil, h.P(g.Text("No data for time period"))),
 		h.P(g.Text(strconv.Itoa(len(history)) + " records")),
@@ -584,28 +584,29 @@ func validateURL(s string) bool {
 }
 
 func notifications(w http.ResponseWriter, r *http.Request) {
+	admin := IsAdmin(r)
 	notifications := getAllNotifications()
 	rows := []g.Node{}
 	for _, n := range notifications {
 		row := h.Tr(
 			h.Td(g.Text(n.Name)),
 			h.Td(g.Text(string(n.Type))),
-			h.Td(linkButton("/notifications/edit/"+n.Name, "Edit")),
-			h.Td(linkButton("/notifications/test/"+n.Name, "Test")),
-			h.Td(formButton("Delete", "/notifications/delete/"+n.Name)),
+			g.If(admin, h.Td(linkButton("/notifications/edit/"+n.Name, "Edit"))),
+			g.If(admin, h.Td(linkButton("/notifications/test/"+n.Name, "Test"))),
+			g.If(admin, h.Td(formButton("Delete", "/notifications/delete/"+n.Name))),
 		)
 		rows = append(rows, row)
 	}
 	if err := layout("Notifications", []g.Node{
 		h.H1(g.Text("Notifications")),
-		linkButton("/notifications/new", "New Notification"),
+		g.If(admin, linkButton("/notifications/new", "New Notification")),
 		linkButton("/", "Home"),
 		h.Br(), h.Br(),
 		h.Table(
 			h.Tr(
 				h.Th(g.Text("Name")),
 				h.Th(g.Text("Type")),
-				h.Th(g.Text("Actions"), g.Attr("colspan", "3")),
+				g.If(admin, h.Th(g.Text("Actions"), g.Attr("colspan", "3"))),
 			),
 			g.Group(rows),
 		),
@@ -937,7 +938,7 @@ func editMailgunNotification(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
-func details(w http.ResponseWriter, r *http.Request) {
+func details(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 	site := r.PathValue("site")
 	monitor, err := getMonitor(site)
 	if err != nil {
@@ -955,7 +956,6 @@ func details(w http.ResponseWriter, r *http.Request) {
 		displayError(w, err)
 		return
 	}
-	log.Println("history", len(history))
 	var certExpiry, currentResponse g.Node
 	if len(history) > 0 {
 		currentResponse = h.Td(g.Text(history[0].ResponseTime.Round(time.Millisecond).String()))
@@ -966,10 +966,14 @@ func details(w http.ResponseWriter, r *http.Request) {
 		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
 		h.Div(
 			linkButton("/monitor/history/"+site+"/day", "History"),
-			g.If(monitor.Active, linkButton("/monitor/pause/"+site, "Pause")),
-			g.If(!monitor.Active, linkButton("/monitor/resume/"+site, "Resume")),
-			linkButton("/monitor/edit/"+site, "Edit"),
-			linkButton("/monitor/delete/"+site, "Delete"),
+			g.If(IsAdmin(r),
+				g.Group{
+					g.If(monitor.Active, linkButton("/monitor/pause/"+site, "Pause")),
+					g.If(!monitor.Active, linkButton("/monitor/resume/"+site, "Resume")),
+					linkButton("/monitor/edit/"+site, "Edit"),
+					linkButton("/monitor/delete/"+site, "Delete"),
+				},
+			),
 			linkButton("/", "Home"),
 		),
 		h.Br(),
@@ -992,7 +996,7 @@ func details(w http.ResponseWriter, r *http.Request) {
 			),
 		),
 		h.Br(),
-		compactHistoryTable(history),
+		compactHistoryTable(history, monitor.StatusOK),
 	}).Render(w); err != nil {
 		log.Println("render err", err)
 	}

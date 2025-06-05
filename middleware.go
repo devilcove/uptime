@@ -113,3 +113,11 @@ func sessionData(r *http.Request) (Session, error) {
 	s.Session = session
 	return s, nil
 }
+
+func IsAdmin(r *http.Request) bool {
+	session, err := sessionData(r)
+	if err != nil {
+		return false
+	}
+	return session.Admin
+}
