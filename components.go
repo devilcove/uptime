@@ -214,6 +214,24 @@ func newUserDialog() g.Node {
 	)
 }
 
+func histPurgeDialog(site, value string) g.Node {
+	return h.Dialog(
+		g.Attr("id", "purge"),
+		h.H2(g.Text("Purge Records")),
+		h.Form(
+			h.Method("post"),
+			h.Action("/monitor/history/purge/"+site),
+			h.Label(h.For("date"), g.Text("Purge all record before:")),
+			h.Br(),
+			h.Input(h.Name("date"), h.Type("date"), g.Attr("value", value)),
+			h.Br(), h.Br(),
+			h.Button(h.Type("button"), g.Text("Cancel"), h.Style("background:red"),
+				g.Attr("onclick", "document.getElementById('purge').close()")),
+			submitButton("Purge"),
+		),
+	)
+}
+
 func radioGroup(label, name string, radios []Radio) g.Node {
 	inputs := []g.Node{}
 	for _, radio := range radios {

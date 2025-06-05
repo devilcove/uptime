@@ -113,6 +113,9 @@ type Details struct {
 }
 
 func compact(status []Status) []Status {
+	if len(status) == 0 {
+		return status
+	}
 	var compact []Status
 	compact = append(compact, status[0])
 	cursor := 0

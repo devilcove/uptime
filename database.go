@@ -134,6 +134,26 @@ func getAllStatus() ([]Status, error) {
 	return allStatus, err
 }
 
+func purgeHistData(site, date string) error {
+	log.Println("purge data from", site, "before", date)
+	dateTime, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return err
+	}
+	stop := []byte(dateTime.Format(time.RFC3339))
+	return db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("history"))
+		history := bucket.Bucket([]byte(site))
+		c := history.Cursor()
+		for k, _ := c.First(); k != nil && bytes.Compare(k, stop) <= 0; k, _ = c.Next() {
+			if err := history.Delete(k); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // getHistory returns array of status values from the given path for the given timeframe
 func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
@@ -221,6 +241,9 @@ func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error)
 		return nil
 	}); err != nil {
 		return 0, 0, err
+	}
+	if total == 0 {
+		return 0, 0, nil
 	}
 	return responseTime / int(total), good / total * 100, nil
 }
@@ -574,15 +597,17 @@ func getAllMonitorsForDisplay() []MonitorDisplay {
 		//history = compact(history)
 
 		var total, good float64
-		for _, hist := range history {
+		for i, hist := range history {
+			if i == 0 {
+				if history[i].StatusCode == monitor.StatusOK {
+					disp.DisplayStatus = true
+				}
+			}
 			total++
 			if hist.StatusCode == monitor.StatusOK {
 				good++
 			}
 			disp.PerCent = good / total * 100
-		}
-		if history[0].StatusCode == monitor.StatusOK {
-			disp.DisplayStatus = true
 		}
 		display = append(display, disp)
 	}

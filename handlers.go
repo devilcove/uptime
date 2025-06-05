@@ -535,10 +535,10 @@ func history(w http.ResponseWriter, r *http.Request) {
 		timeFrame = Month
 	case "week":
 		timeFrame = Week
-	case "day":
-		timeFrame = Day
+	case "all":
+		timeFrame = All
 	default:
-		timeFrame = Hour
+		timeFrame = Day
 	}
 	history, err := getHistory([]string{"history", site}, timeFrame)
 	if err != nil {
@@ -550,14 +550,19 @@ func history(w http.ResponseWriter, r *http.Request) {
 	if err := layout("History", []g.Node{
 		h.H2(g.Text("Uptime History")),
 		h.Div(
-			linkButton("/monitor/history/"+site+"/hour", "hour"),
 			linkButton("/monitor/history/"+site+"/day", "day"),
 			linkButton("/monitor/history/"+site+"/week", "week"),
 			linkButton("/monitor/history/"+site+"/month", "month"),
+			linkButton("/monitor/history/"+site+"/year", "year"),
+			linkButton("/monitor/history/"+site+"/all", "all time"),
 			linkButton("/", "Home"),
+			h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
+				g.Attr("onclick", "document.getElementById('purge').showModal()")),
 		),
 		g.If(history == nil, h.P(g.Text("No data for time period"))),
+		h.P(g.Text(strconv.Itoa(len(history)) + " records")),
 		historyTable(history),
+		histPurgeDialog(site, time.Now().Add(-time.Hour*24*30).Format(time.DateOnly)),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
 	}
@@ -951,6 +956,11 @@ func details(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("history", len(history))
+	var certExpiry, currentResponse g.Node
+	if len(history) > 0 {
+		currentResponse = h.Td(g.Text(history[0].ResponseTime.Round(time.Millisecond).String()))
+		certExpiry = h.Td(g.Text(strconv.Itoa(history[0].CertExpiry) + " days"))
+	}
 	if err := layout("Details", []g.Node{
 		h.H2(g.Text(site)),
 		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
@@ -973,12 +983,12 @@ func details(w http.ResponseWriter, r *http.Request) {
 				h.Th(g.Text("Certificate Expiry")),
 			),
 			h.Tr(
-				h.Td(g.Text(history[0].ResponseTime.Round(time.Millisecond).String())),
+				currentResponse,
 				h.Td(g.Text(strconv.Itoa(details.Response24)+" ms")),
 				h.Td(g.Text(strconv.Itoa(details.Response30)+" ms")),
 				h.Td(g.Text(strconv.FormatFloat(details.Uptime24, 'f', 2, 64)+" %")),
 				h.Td(g.Text(strconv.FormatFloat(details.Uptime30, 'f', 2, 64)+" %")),
-				h.Td(g.Text(strconv.Itoa(history[0].CertExpiry)+" days")),
+				certExpiry,
 			),
 		),
 		h.Br(),
@@ -1018,4 +1028,14 @@ func resumeMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	reset <- syscall.SIGHUP
 	details(w, r)
+}
+
+func purgeHistory(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	date := r.FormValue("date")
+	if err := purgeHistData(site, date); err != nil {
+		displayError(w, err)
+		return
+	}
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
