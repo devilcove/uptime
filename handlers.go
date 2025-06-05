@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
-	"github.com/kr/pretty"
-	"maragu.dev/gomponents"
-	"maragu.dev/gomponents/html"
+	g "maragu.dev/gomponents"
+	h "maragu.dev/gomponents/html"
 )
 
 func favicon(w http.ResponseWriter, r *http.Request) {
@@ -27,21 +27,16 @@ func styles(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
-	status, err := getAllStatus()
-	if err != nil {
-		displayError(w, err)
-		return
-	}
-	if err := layout("Testing", []gomponents.Node{
-		html.H2(gomponents.Text("Uptime Status")),
-		html.Br(nil),
-		linkButton("/monitor/new", "New Monitor"),
+	if err := layout("Uptime", []g.Node{
+		h.H2(g.Text("Uptime Status")),
+		h.Br(nil),
+		g.If(IsAdmin(r), linkButton("/monitor/new", "New Monitor")),
 		linkButton("notifications/", "Notifications"),
 		linkButton("/logs", "View Logs"),
 		linkButton("/logout", "Logout"),
 		linkButton("/user/", "User Admin"),
-		html.Br(nil),
-		statusTable(status),
+		h.Br(nil),
+		statusTable(),
 	}).Render(w); err != nil {
 		log.Println("render main page", err)
 	}
@@ -54,13 +49,13 @@ func logs(w http.ResponseWriter, r *http.Request) { //nolint:revive,varnamelen
 		http.Error(w, "unable to retrieve logs", http.StatusInternalServerError)
 		return
 	}
-	data := []gomponents.Node{}
+	data := []g.Node{}
 	lines := strings.Split(string(logs), "\n")
 	for i := len(lines) - 1; i > len(lines)-200; i-- {
 		if i < 0 {
 			break
 		}
-		data = append(data, gomponents.Text(lines[i]), html.Br(nil))
+		data = append(data, g.Text(lines[i]), h.Br(nil))
 	}
 
 	if err := displayLogs(data).Render(w); err != nil {
@@ -79,9 +74,9 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Println("session save", err)
 	}
-	if err := layout("Logout", []gomponents.Node{
-		html.H2(gomponents.Text("Goodbye")),
-		html.Br(nil),
+	if err := layout("Logout", []g.Node{
+		h.H2(g.Text("Goodbye")),
+		h.Br(nil),
 		linkButton("/", "Home"),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
@@ -89,11 +84,11 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func displayLogin(w http.ResponseWriter, r *http.Request) {
-	if err := layout("Login", []gomponents.Node{
-		html.Form(html.Class("center"),
-			html.Action("/login"),
-			html.Method("POST"),
-			html.Table(
+	if err := layout("Login", []g.Node{
+		h.Form(h.Class("center"),
+			h.Action("/login"),
+			h.Method("POST"),
+			h.Table(
 				inputTableRow("Name", "name", "text", "", "40"),
 				inputTableRow("Pass", "pass", "password", "", "40"),
 			),
@@ -145,18 +140,18 @@ func admin(w http.ResponseWriter, r *http.Request) {
 	} else {
 		logins = append(logins, getUser(data.User))
 	}
-	if err := layout("Admin", []gomponents.Node{
+	if err := layout("Admin", []g.Node{
 		container(true,
-			html.H2(gomponents.Text("Admin Page")),
-			gomponents.If(data.Admin,
-				html.Button(
-					gomponents.Attr("type", "button"),
-					gomponents.Attr("onclick", "document.getElementById('new').showModal()"),
-					gomponents.Text("Create New User"),
+			h.H2(g.Text("Admin Page")),
+			g.If(data.Admin,
+				h.Button(
+					g.Attr("type", "button"),
+					g.Attr("onclick", "document.getElementById('new').showModal()"),
+					g.Text("Create New User"),
 				),
 			),
 			linkButton("/", "Home"),
-			html.Br(nil), html.Br(nil),
+			h.Br(nil), h.Br(nil),
 			userTable(logins),
 		),
 		newUserDialog(),
@@ -173,25 +168,25 @@ func editUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := layout("Edit User", []gomponents.Node{
-		html.H2(gomponents.Text("Edit User " + user.Name)),
-		html.Form(html.Class("center"),
-			html.Action("/user/"+user.Name),
-			html.Method("POST"),
-			html.Div(
-				html.Label(gomponents.Text("Pass")),
-				html.Input(
-					html.ID("password"),
-					html.Type("password"),
-					html.Name("pass"),
-					gomponents.Attr("size", "40"),
+	if err := layout("Edit User", []g.Node{
+		h.H2(g.Text("Edit User " + user.Name)),
+		h.Form(h.Class("center"),
+			h.Action("/user/"+user.Name),
+			h.Method("POST"),
+			h.Div(
+				h.Label(g.Text("Pass")),
+				h.Input(
+					h.ID("password"),
+					h.Type("password"),
+					h.Name("pass"),
+					g.Attr("size", "40"),
 				),
 			),
-			html.Div(
-				html.Label(gomponents.Text("Admin")),
+			h.Div(
+				h.Label(g.Text("Admin")),
 				checkbox("admin", user.Admin),
 			),
-			html.Div(
+			h.Div(
 				linkButton("/user/", "Cancel"),
 				submitButton("Edit"),
 			),
@@ -254,9 +249,9 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 func displayError(w http.ResponseWriter, err error) {
 	log.Println(err)
-	if err := layout("Error", []gomponents.Node{
-		html.H1(gomponents.Text("An Error Occurred")),
-		html.P(gomponents.Text(err.Error())),
+	if err := layout("Error", []g.Node{
+		h.H1(g.Text("An Error Occurred")),
+		h.P(g.Text(err.Error())),
 		linkButton("/", "Home"),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
@@ -265,21 +260,21 @@ func displayError(w http.ResponseWriter, err error) {
 
 func newMonitor(w http.ResponseWriter, r *http.Request) {
 	notifications := getAllNotifications()
-	notifyCheckboxes := make([]gomponents.Node, 0, len(notifications)+1)
+	notifyCheckboxes := make([]g.Node, 0, len(notifications)+1)
 	for _, n := range notifications {
-		checkbox := html.Input(
-			html.Type("checkbox"),
-			html.Name(n.Name),
-			gomponents.Text(n.Name),
+		checkbox := h.Input(
+			h.Type("checkbox"),
+			h.Name(n.Name),
+			g.Text(n.Name),
 		)
-		notifyCheckboxes = append(notifyCheckboxes, checkbox, gomponents.Text(n.Name))
+		notifyCheckboxes = append(notifyCheckboxes, checkbox, g.Text(n.Name))
 	}
-	if err := layout("New Monitor", []gomponents.Node{
-		html.H2(gomponents.Text("Create New Monitor")),
-		html.Form(
-			html.Method("post"),
-			html.Action("/monitor/new"),
-			html.Table(
+	if err := layout("New Monitor", []g.Node{
+		h.H2(g.Text("Create New Monitor")),
+		h.Form(
+			h.Method("post"),
+			h.Action("/monitor/new"),
+			h.Table(
 				inputTableRow("Name", "name", "text", "", "60"),
 				inputTableRow("URL", "url", "text", "", "60"),
 				inputTableRow("OK Status", "statusok", "number", "200", "60"),
@@ -299,9 +294,9 @@ func newMonitor(w http.ResponseWriter, r *http.Request) {
 					{"http", "Website", false},
 					{"ping", "Ping", false},
 				}),
-				html.Tr(
-					html.Td(html.Label(gomponents.Text("Notifications"))),
-					html.Td(gomponents.Group(notifyCheckboxes)),
+				h.Tr(
+					h.Td(h.Label(g.Text("Notifications"))),
+					h.Td(g.Group(notifyCheckboxes)),
 				),
 			),
 			linkButton("/", "Cancel"),
@@ -324,6 +319,7 @@ func createMonitor(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 		Type:    MonitorType(r.FormValue("type")),
+		Active:  true,
 	}
 	for key, value := range r.Form {
 		if key == "notifications" {
@@ -363,50 +359,50 @@ func editMonitor(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 		return
 	}
 	notifications := getAllNotifications()
-	notifyCheckboxes := make([]gomponents.Node, 0, len(notifications)+1)
+	notifyCheckboxes := make([]g.Node, 0, len(notifications)+1)
 	for _, n := range notifications {
-		checkbox := html.Input(
-			html.Type("checkbox"),
-			html.Name(n.Name),
-			gomponents.Text(n.Name),
-			gomponents.If(slices.Contains(monitor.Notifiers, n.Name), html.Checked()),
+		checkbox := h.Input(
+			h.Type("checkbox"),
+			h.Name(n.Name),
+			g.Text(n.Name),
+			g.If(slices.Contains(monitor.Notifiers, n.Name), h.Checked()),
 		)
-		notifyCheckboxes = append(notifyCheckboxes, checkbox, gomponents.Text(n.Name))
+		notifyCheckboxes = append(notifyCheckboxes, checkbox, g.Text(n.Name))
 	}
-	if err := layout("Edit Monitor", []gomponents.Node{
-		html.H2(gomponents.Text("Edit Monitor")),
-		html.Form(
-			html.Method("post"),
-			html.Action("/monitor/edit/"+monitor.Name),
-			html.Table(
-				html.Tr(
-					html.Td(html.Label(html.For("name"), gomponents.Text("Name"))),
-					html.Td(html.Input(
-						html.Name("name"),
-						html.Type("text"),
-						html.Required(),
-						html.Value(monitor.Name),
-						gomponents.Attr("size", "60"),
+	if err := layout("Edit Monitor", []g.Node{
+		h.H2(g.Text("Edit Monitor")),
+		h.Form(
+			h.Method("post"),
+			h.Action("/monitor/edit/"+monitor.Name),
+			h.Table(
+				h.Tr(
+					h.Td(h.Label(h.For("name"), g.Text("Name"))),
+					h.Td(h.Input(
+						h.Name("name"),
+						h.Type("text"),
+						h.Required(),
+						h.Value(monitor.Name),
+						g.Attr("size", "60"),
 					)),
 				),
-				html.Tr(
-					html.Td(html.Label(html.For("url"), gomponents.Text("URL"))),
-					html.Td(html.Input(
-						html.Name("url"),
-						html.Type("text"),
-						html.Required(),
-						html.Value(monitor.URL),
-						gomponents.Attr("size", "60"),
+				h.Tr(
+					h.Td(h.Label(h.For("url"), g.Text("URL"))),
+					h.Td(h.Input(
+						h.Name("url"),
+						h.Type("text"),
+						h.Required(),
+						h.Value(monitor.URL),
+						g.Attr("size", "60"),
 					)),
 				),
-				html.Tr(
-					html.Td(html.Label(html.For("statusok"), gomponents.Text("OK Status"))),
-					html.Td(html.Input(
-						html.Name("statusok"),
-						html.Type("number"),
-						html.Required(),
-						html.Value("200"),
-						gomponents.Attr("size", "60"),
+				h.Tr(
+					h.Td(h.Label(h.For("statusok"), g.Text("OK Status"))),
+					h.Td(h.Input(
+						h.Name("statusok"),
+						h.Type("number"),
+						h.Required(),
+						h.Value("200"),
+						g.Attr("size", "60"),
 					)),
 				),
 				radioGroup("Frequency", "freq", []Radio{
@@ -425,9 +421,9 @@ func editMonitor(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 					{"http", "Website", monitor.Type == "http"},
 					{"ping", "Ping", monitor.Type == "ping"},
 				}),
-				html.Tr(
-					html.Td(html.Label(gomponents.Text("Notifications"))),
-					html.Td(gomponents.Group(notifyCheckboxes)),
+				h.Tr(
+					h.Td(h.Label(g.Text("Notifications"))),
+					h.Td(g.Group(notifyCheckboxes)),
 				),
 			),
 			linkButton("/", "Cancel"),
@@ -440,21 +436,21 @@ func editMonitor(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 
 func deleteSite(w http.ResponseWriter, r *http.Request) {
 	monitor := r.PathValue("site")
-	if err := layout("Delete Monitor", []gomponents.Node{
-		html.H2(gomponents.Text("Delete Monitor " + monitor)),
-		html.Form(
-			html.Action("/monitor/delete/"+monitor),
-			html.Method("post"),
-			html.Input(
-				html.Type("checkbox"),
-				html.Value("history"),
-				html.Name("history"),
+	if err := layout("Delete Monitor", []g.Node{
+		h.H2(g.Text("Delete Monitor " + monitor)),
+		h.Form(
+			h.Action("/monitor/delete/"+monitor),
+			h.Method("post"),
+			h.Input(
+				h.Type("checkbox"),
+				h.Value("history"),
+				h.Name("history"),
 			),
-			html.Label(
-				html.For("history"),
-				gomponents.Text("Also deleted history?"),
+			h.Label(
+				h.For("history"),
+				g.Text("Also deleted history?"),
 			),
-			html.Br(), html.Br(),
+			h.Br(), h.Br(),
 			linkButton("/", "Cancel"),
 			submitButton("Delete"),
 		),
@@ -498,6 +494,7 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 		Type:    MonitorType(r.FormValue("type")),
+		Active:  true,
 	}
 	ok, err := strconv.Atoi(r.FormValue("statusok"))
 	if err != nil {
@@ -538,10 +535,10 @@ func history(w http.ResponseWriter, r *http.Request) {
 		timeFrame = Month
 	case "week":
 		timeFrame = Week
-	case "day":
-		timeFrame = Day
+	case "all":
+		timeFrame = All
 	default:
-		timeFrame = Hour
+		timeFrame = Day
 	}
 	history, err := getHistory([]string{"history", site}, timeFrame)
 	if err != nil {
@@ -550,17 +547,22 @@ func history(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slices.Reverse(history)
-	if err := layout("History", []gomponents.Node{
-		html.H2(gomponents.Text("Uptime History")),
-		html.Div(
-			linkButton("/monitor/history/"+site+"/hour", "hour"),
+	if err := layout("History", []g.Node{
+		h.H2(g.Text("Uptime History")),
+		h.Div(
 			linkButton("/monitor/history/"+site+"/day", "day"),
 			linkButton("/monitor/history/"+site+"/week", "week"),
 			linkButton("/monitor/history/"+site+"/month", "month"),
+			linkButton("/monitor/history/"+site+"/year", "year"),
+			linkButton("/monitor/history/"+site+"/all", "all time"),
 			linkButton("/", "Home"),
+			g.If(IsAdmin(r), h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
+				g.Attr("onclick", "document.getElementById('purge').showModal()"))),
 		),
-		gomponents.If(history == nil, html.P(gomponents.Text("No data for time period"))),
+		g.If(history == nil, h.P(g.Text("No data for time period"))),
+		h.P(g.Text(strconv.Itoa(len(history)) + " records")),
 		historyTable(history),
+		histPurgeDialog(site, time.Now().Add(-time.Hour*24*30).Format(time.DateOnly)),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
 	}
@@ -582,30 +584,31 @@ func validateURL(s string) bool {
 }
 
 func notifications(w http.ResponseWriter, r *http.Request) {
+	admin := IsAdmin(r)
 	notifications := getAllNotifications()
-	rows := []gomponents.Node{}
+	rows := []g.Node{}
 	for _, n := range notifications {
-		row := html.Tr(
-			html.Td(gomponents.Text(n.Name)),
-			html.Td(gomponents.Text(string(n.Type))),
-			html.Td(linkButton("/notifications/edit/"+n.Name, "Edit")),
-			html.Td(linkButton("/notifications/test/"+n.Name, "Test")),
-			html.Td(formButton("Delete", "/notifications/delete/"+n.Name)),
+		row := h.Tr(
+			h.Td(g.Text(n.Name)),
+			h.Td(g.Text(string(n.Type))),
+			g.If(admin, h.Td(linkButton("/notifications/edit/"+n.Name, "Edit"))),
+			g.If(admin, h.Td(linkButton("/notifications/test/"+n.Name, "Test"))),
+			g.If(admin, h.Td(formButton("Delete", "/notifications/delete/"+n.Name))),
 		)
 		rows = append(rows, row)
 	}
-	if err := layout("Notifications", []gomponents.Node{
-		html.H1(gomponents.Text("Notifications")),
-		linkButton("/notifications/new", "New Notification"),
+	if err := layout("Notifications", []g.Node{
+		h.H1(g.Text("Notifications")),
+		g.If(admin, linkButton("/notifications/new", "New Notification")),
 		linkButton("/", "Home"),
-		html.Br(), html.Br(),
-		html.Table(
-			html.Tr(
-				html.Th(gomponents.Text("Name")),
-				html.Th(gomponents.Text("Type")),
-				html.Th(gomponents.Text("Actions"), gomponents.Attr("colspan", "3")),
+		h.Br(), h.Br(),
+		h.Table(
+			h.Tr(
+				h.Th(g.Text("Name")),
+				h.Th(g.Text("Type")),
+				g.If(admin, h.Th(g.Text("Actions"), g.Attr("colspan", "3"))),
 			),
-			gomponents.Group(rows),
+			g.Group(rows),
 		),
 	}).Render(w); err != nil {
 		log.Println("render err", err)
@@ -613,12 +616,12 @@ func notifications(w http.ResponseWriter, r *http.Request) {
 }
 
 func newNotification(w http.ResponseWriter, r *http.Request) { //nolint:funlen
-	if err := layoutExtra("New Notification", []gomponents.Node{
-		html.H1(gomponents.Text("New Notifications")),
-		html.Form(
-			html.Method("post"),
-			html.Action("/notifications/new"),
-			html.Table(
+	if err := layoutExtra("New Notification", []g.Node{
+		h.H1(g.Text("New Notifications")),
+		h.Form(
+			h.Method("post"),
+			h.Action("/notifications/new"),
+			h.Table(
 				inputTableRow("Name", "name", "text", "", "40"),
 				radioGroup("Notification Type", "type", []Radio{
 					{"slack", "Slack", false},
@@ -628,63 +631,63 @@ func newNotification(w http.ResponseWriter, r *http.Request) { //nolint:funlen
 					{"sms", "SMS", false},
 				}),
 			),
-			html.Br(),
-			html.Table(
-				html.ID("slack"), html.Style("display:none"),
-				html.Tr(
-					html.Td(gomponents.Text("Slack Data"), gomponents.Attr("colspan", "2")),
+			h.Br(),
+			h.Table(
+				h.ID("slack"), h.Style("display:none"),
+				h.Tr(
+					h.Td(g.Text("Slack Data"), g.Attr("colspan", "2")),
 				),
-				html.Tr(
-					html.Td(html.Label(html.For("token"), gomponents.Text("Token"))),
-					html.Td(html.Input(html.Name("token"), html.Type("text"), gomponents.Attr("size", "40"))),
+				h.Tr(
+					h.Td(h.Label(h.For("token"), g.Text("Token"))),
+					h.Td(h.Input(h.Name("token"), h.Type("text"), g.Attr("size", "40"))),
 				),
-				html.Tr(
-					html.Td(html.Label(html.For("channel"), gomponents.Text("Channel"))),
-					html.Td(html.Input(html.Name("channel"), html.Type("text"), gomponents.Attr("size", "40"))),
-				),
-			),
-			html.Table(
-				html.ID("discord"), html.Style("display:none"),
-				html.Tr(
-					html.Td(gomponents.Text("Discord Data"), gomponents.Attr("colspan", "2")),
-				),
-				html.Tr(
-					html.Td(html.Label(html.For("webhook"), gomponents.Text("Webhook URL"))),
-					html.Td(html.Input(html.Name("webhook"), html.Type("text"), gomponents.Attr("size", "40"))),
+				h.Tr(
+					h.Td(h.Label(h.For("channel"), g.Text("Channel"))),
+					h.Td(h.Input(h.Name("channel"), h.Type("text"), g.Attr("size", "40"))),
 				),
 			),
-			html.Table(
-				html.ID("mailgun"), html.Style("display:none"),
-				html.Tr(
-					html.Td(gomponents.Text("MailGun Data"), gomponents.Attr("colspan", "2")),
+			h.Table(
+				h.ID("discord"), h.Style("display:none"),
+				h.Tr(
+					h.Td(g.Text("Discord Data"), g.Attr("colspan", "2")),
 				),
-				html.Tr(
-					html.Td(html.Label(html.For("apikey"), gomponents.Text("API Key"))),
-					html.Td(html.Input(html.Name("apikey"), html.Type("text"), gomponents.Attr("size", "40"))),
-				),
-				html.Tr(
-					html.Td(html.Label(html.For("domain"), gomponents.Text("Sending Email Domain"))),
-					html.Td(html.Input(html.Name("domain"), html.Type("text"), gomponents.Attr("size", "40"))),
-				),
-				html.Tr(
-					html.Td(html.Label(html.For("recipients"), gomponents.Text("Recipient Email Addresses(s)"))),
-					html.Td(html.Input(html.Name("recipients"), html.Type("text"),
-						gomponents.Attr("size", "40"), html.Multiple())),
+				h.Tr(
+					h.Td(h.Label(h.For("webhook"), g.Text("Webhook URL"))),
+					h.Td(h.Input(h.Name("webhook"), h.Type("text"), g.Attr("size", "40"))),
 				),
 			),
-			html.Table(
-				html.ID("email"), html.Style("display:none"),
-				html.Tr(
-					html.Td(gomponents.Text("email: coming soon"), gomponents.Attr("colspan", "2")),
+			h.Table(
+				h.ID("mailgun"), h.Style("display:none"),
+				h.Tr(
+					h.Td(g.Text("MailGun Data"), g.Attr("colspan", "2")),
+				),
+				h.Tr(
+					h.Td(h.Label(h.For("apikey"), g.Text("API Key"))),
+					h.Td(h.Input(h.Name("apikey"), h.Type("text"), g.Attr("size", "40"))),
+				),
+				h.Tr(
+					h.Td(h.Label(h.For("domain"), g.Text("Sending Email Domain"))),
+					h.Td(h.Input(h.Name("domain"), h.Type("text"), g.Attr("size", "40"))),
+				),
+				h.Tr(
+					h.Td(h.Label(h.For("recipients"), g.Text("Recipient Email Addresses(s)"))),
+					h.Td(h.Input(h.Name("recipients"), h.Type("text"),
+						g.Attr("size", "40"), h.Multiple())),
 				),
 			),
-			html.Table(
-				html.ID("sms"), html.Style("display:none"),
-				html.Tr(
-					html.Td(gomponents.Text("sms: coming soon"), gomponents.Attr("colspan", "2")),
+			h.Table(
+				h.ID("email"), h.Style("display:none"),
+				h.Tr(
+					h.Td(g.Text("email: coming soon"), g.Attr("colspan", "2")),
 				),
 			),
-			html.Br(),
+			h.Table(
+				h.ID("sms"), h.Style("display:none"),
+				h.Tr(
+					h.Td(g.Text("sms: coming soon"), g.Attr("colspan", "2")),
+				),
+			),
+			h.Br(),
 			linkButton("/notifications/", "Cancel"),
 			submitButton("Create"),
 		),
@@ -761,39 +764,38 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) { //nolint:
 		displayError(w, err)
 		return
 	}
-	var table, hidden gomponents.Node
-	log.Println("....", notifyType, pretty.Sprint(n))
+	var table, hidden g.Node
 	switch notifyType {
 	case Slack:
 		var notify SlackNotifier
 		if err := json.Unmarshal(notification, &notify); err != nil {
 			log.Println("-------------problem", string(notification))
 		}
-		table = html.Table(
+		table = h.Table(
 			inputTableRow("Token", "token", "text", notify.Token, "60"),
 			inputTableRow("Channel", "channel", "text", notify.Channel, "60"),
 		)
-		hidden = html.Input(html.Name("type"), html.Type("hidden"), html.Value("slack"))
+		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("slack"))
 	case Discord:
 		var notify DisordNotifier
 		if err := json.Unmarshal(notification, &notify); err != nil {
 			log.Println("-------------problem", string(notification))
 		}
-		table = html.Table(
+		table = h.Table(
 			inputTableRow("Webhook URL", "webhook", "text", notify.URL, "60"),
 		)
-		hidden = html.Input(html.Name("type"), html.Type("hidden"), html.Value("discord"))
+		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("discord"))
 	case MailGun:
 		var notify MailGunNotifier
 		if err := json.Unmarshal(notification, &notify); err != nil {
 			log.Println("-------------problem", string(notification))
 		}
-		table = html.Table(
+		table = h.Table(
 			inputTableRow("API Key", "apikey", "text", notify.APIKey, "60"),
 			inputTableRow("Email Domain", "domain", "text", notify.Domain, "60"),
 			inputTableRow("Recipient Email(s)", "email", "text", strings.Join(notify.Recipients, ","), "60"),
 		)
-		hidden = html.Input(html.Name("type"), html.Type("hidden"), html.Value("mailgun"))
+		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("mailgun"))
 	case Email:
 		displayError(w, errors.New("notification type not yet implemented"))
 		return
@@ -804,10 +806,10 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) { //nolint:
 		displayError(w, errors.New("invalid notification type"))
 		return
 	}
-	if err := layout("Edit Notification", []gomponents.Node{
-		html.H1(gomponents.Text("Edit Notification")),
-		html.H2(gomponents.Text("Notifications Name: " + n.Name)),
-		html.Form(html.Method("post"), html.Action("/notification/edit"),
+	if err := layout("Edit Notification", []g.Node{
+		h.H1(g.Text("Edit Notification")),
+		h.H2(g.Text("Notifications Name: " + n.Name)),
+		h.Form(h.Method("post"), h.Action("/notification/edit"),
 			table,
 			hidden,
 			linkButton("/notifications/", "Cancel"),
@@ -868,9 +870,9 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 		displayError(w, errors.New("invalid notification type"))
 		return
 	}
-	if err := layout("Test Notification", []gomponents.Node{
-		html.H3(gomponents.Text("Text Notfication Sent")),
-		html.H4(gomponents.Text(string(kind))),
+	if err := layout("Test Notification", []g.Node{
+		h.H3(g.Text("Text Notfication Sent")),
+		h.H4(g.Text(string(kind))),
 		linkButton("/notifications/", "Notifications"),
 		linkButton("/", "Home"),
 	}).Render(w); err != nil {
@@ -879,16 +881,16 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 func editSMSNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
-	if err := layout("Edit Notification", []gomponents.Node{
-		html.H2(gomponents.Text("Not Implemented")),
+	if err := layout("Edit Notification", []g.Node{
+		h.H2(g.Text("Not Implemented")),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
 	}
 }
 
 func editEmailNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
-	if err := layout("Edit Notification", []gomponents.Node{
-		html.H2(gomponents.Text("Not Implemented")),
+	if err := layout("Edit Notification", []g.Node{
+		h.H2(g.Text("Not Implemented")),
 	}).Render(w); err != nil {
 		log.Println("render error", err)
 	}
@@ -934,4 +936,110 @@ func editMailgunNotification(w http.ResponseWriter, r *http.Request) {
 	}
 	reset <- syscall.SIGHUP
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
+}
+
+func details(w http.ResponseWriter, r *http.Request) { //nolint:funlen
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	history, err := getHistory([]string{"history", site}, All)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	history = compact(history)
+	details, err := getHistoryDetails(monitor.Name, monitor.StatusOK)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	var certExpiry, currentResponse g.Node
+	if len(history) > 0 {
+		currentResponse = h.Td(g.Text(history[0].ResponseTime.Round(time.Millisecond).String()))
+		certExpiry = h.Td(g.Text(strconv.Itoa(history[0].CertExpiry) + " days"))
+	}
+	if err := layout("Details", []g.Node{
+		h.H2(g.Text(site)),
+		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
+		h.Div(
+			linkButton("/monitor/history/"+site+"/day", "History"),
+			g.If(IsAdmin(r),
+				g.Group{
+					g.If(monitor.Active, linkButton("/monitor/pause/"+site, "Pause")),
+					g.If(!monitor.Active, linkButton("/monitor/resume/"+site, "Resume")),
+					linkButton("/monitor/edit/"+site, "Edit"),
+					linkButton("/monitor/delete/"+site, "Delete"),
+				},
+			),
+			linkButton("/", "Home"),
+		),
+		h.Br(),
+		h.Table(
+			h.Tr(
+				h.Th(g.Text("Current Response")),
+				h.Th(g.Text("24 Hour Avg Response")),
+				h.Th(g.Text("30 Day Avg Response")),
+				h.Th(g.Text("24 Hour Uptime")),
+				h.Th(g.Text("30 Day Uptime")),
+				h.Th(g.Text("Certificate Expiry")),
+			),
+			h.Tr(
+				currentResponse,
+				h.Td(g.Text(strconv.Itoa(details.Response24)+" ms")),
+				h.Td(g.Text(strconv.Itoa(details.Response30)+" ms")),
+				h.Td(g.Text(strconv.FormatFloat(details.Uptime24, 'f', 2, 64)+" %")),
+				h.Td(g.Text(strconv.FormatFloat(details.Uptime30, 'f', 2, 64)+" %")),
+				certExpiry,
+			),
+		),
+		h.Br(),
+		compactHistoryTable(history, monitor.StatusOK),
+	}).Render(w); err != nil {
+		log.Println("render err", err)
+	}
+}
+
+func pauseMonitor(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	monitor.Active = false
+	if err := saveMonitor(monitor, true); err != nil {
+		displayError(w, err)
+		return
+	}
+	reset <- syscall.SIGHUP
+	details(w, r)
+}
+
+func resumeMonitor(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	monitor.Active = true
+	if err := saveMonitor(monitor, true); err != nil {
+		displayError(w, err)
+		return
+	}
+	reset <- syscall.SIGHUP
+	details(w, r)
+}
+
+func purgeHistory(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	date := r.FormValue("date")
+	if err := purgeHistData(site, date); err != nil {
+		displayError(w, err)
+		return
+	}
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }

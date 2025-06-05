@@ -15,6 +15,9 @@ func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
 		log.Println("get monitors", err)
 	} else {
 		for _, m := range monitorers {
+			if !m.Active {
+				continue
+			}
 			log.Println("starting monitor", m.Name)
 			wg.Add(1)
 			go monitor(ctx, wg, &m)

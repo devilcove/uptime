@@ -47,6 +47,9 @@ func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 	user.HandleFunc("POST /{user}", updateUser)
 
 	monitor := Router("/monitor", auth)
+	monitor.HandleFunc("GET /details/{site}", details)
+	monitor.HandleFunc("GET /pause/{site}", pauseMonitor)
+	monitor.HandleFunc("GET /resume/{site}", resumeMonitor)
 	monitor.HandleFunc("GET /new", newMonitor)
 	monitor.HandleFunc("POST /new", createMonitor)
 	monitor.HandleFunc("GET /delete/{site}", deleteSite)
@@ -54,6 +57,7 @@ func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 	monitor.HandleFunc("GET /edit/{site}", editMonitor)
 	monitor.HandleFunc("POST /edit/{site}", updateMonitor)
 	monitor.HandleFunc("GET /history/{site}/{duration}", history)
+	monitor.HandleFunc("POST /history/purge/{site}", purgeHistory)
 
 	notification := Router("/notifications", auth)
 	notification.HandleFunc("GET /", notifications)

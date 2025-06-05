@@ -42,6 +42,7 @@ const (
 	Week  TimeFrame = "Week"
 	Month TimeFrame = "Month"
 	Year  TimeFrame = "Year"
+	All   TimeFrame = "All"
 )
 
 type User struct {
@@ -67,6 +68,7 @@ type Monitor struct {
 	Name      string
 	Timeout   string
 	StatusOK  int
+	Active    bool
 	Notifiers []string
 }
 
@@ -93,3 +95,35 @@ var (
 	errInvalidNoficationType = errors.New("invalid notification type")
 	errNotFound              = errors.New("not found")
 )
+
+type MonitorDisplay struct {
+	Name          string
+	Active        bool
+	DisplayStatus bool
+	PerCent       float64
+	Status        Status
+}
+
+type Details struct {
+	Status     []Status
+	Response24 int
+	Response30 int
+	Uptime24   float64
+	Uptime30   float64
+}
+
+func compact(status []Status) []Status {
+	if len(status) == 0 {
+		return status
+	}
+	var compact []Status
+	compact = append(compact, status[0])
+	cursor := 0
+	for _, s := range status[1:] {
+		if s.StatusCode != compact[cursor].StatusCode {
+			compact = append(compact, s)
+			cursor++
+		}
+	}
+	return compact
+}
