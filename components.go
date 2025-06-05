@@ -87,27 +87,27 @@ func userTable(users []User) g.Node {
 func statusTable() g.Node {
 	monitors := getAllMonitorsForDisplay()
 	rows := []g.Node{}
-
 	header := h.Tr(
-		h.Th(g.Text("Name")),
-		h.Th(g.Text("Status")),
+		h.Th(g.Text("Monitor")),
+		h.Th(g.Text("Uptime")),
 		h.Th(g.Text("Time")),
-		h.Th(g.Text("Avg Response")),
 		h.Th(g.Text("Response Time")),
 		h.Th(g.Text("Cert Expiry")),
 		h.Th(g.Text("Actions")),
 	)
 	rows = append(rows, header)
-
 	for _, m := range monitors {
+		name := h.Button(g.Text(m.Name), h.Style("background:red"), h.Title("Paused"))
+		if m.Active {
+			name = h.Button(g.Text(m.Name), h.Style("background:green"), h.Title("Active"))
+		}
 		row := h.Tr(
-			h.Td(g.Text(m.Name)),
+			h.Td(name),
 			h.Td(h.Button(h.Style("background:"+"green"),
 				g.Text(strconv.FormatFloat(m.PerCent, 'f', 2, 64)+" %")),
 				h.Title("last 24 hours"),
 			),
 			h.Td(g.Text(m.Status.Time.Format(time.RFC822))),
-			h.Td(g.Text(strconv.Itoa(int(m.AvgResponse))+"ms")),
 			h.Td(g.Text(m.Status.ResponseTime.Round(time.Millisecond).String())),
 			h.Td(g.Text(strconv.Itoa(m.Status.CertExpiry))),
 			h.Td(linkButton("/monitor/details/"+m.Name, "Details")),

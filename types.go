@@ -68,6 +68,7 @@ type Monitor struct {
 	Name      string
 	Timeout   string
 	StatusOK  int
+	Active    bool
 	Notifiers []string
 }
 
@@ -97,16 +98,10 @@ var (
 
 type MonitorDisplay struct {
 	Name          string
+	Active        bool
 	DisplayStatus bool
 	PerCent       float64
-	AvgResponse   int64
-	History       []History
 	Status        Status
-}
-
-type History struct {
-	Status bool
-	Time   time.Time
 }
 
 type Details struct {

@@ -48,6 +48,8 @@ func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 
 	monitor := Router("/monitor", auth)
 	monitor.HandleFunc("GET /details/{site}", details)
+	monitor.HandleFunc("GET /pause/{site}", pauseMonitor)
+	monitor.HandleFunc("GET /resume/{site}", resumeMonitor)
 	monitor.HandleFunc("GET /new", newMonitor)
 	monitor.HandleFunc("POST /new", createMonitor)
 	monitor.HandleFunc("GET /delete/{site}", deleteSite)

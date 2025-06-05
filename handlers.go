@@ -319,6 +319,7 @@ func createMonitor(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 		Type:    MonitorType(r.FormValue("type")),
+		Active:  true,
 	}
 	for key, value := range r.Form {
 		if key == "notifications" {
@@ -493,6 +494,7 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 		Freq:    r.FormValue("freq"),
 		Timeout: r.FormValue("timeout"),
 		Type:    MonitorType(r.FormValue("type")),
+		Active:  true,
 	}
 	ok, err := strconv.Atoi(r.FormValue("statusok"))
 	if err != nil {
@@ -954,7 +956,8 @@ func details(w http.ResponseWriter, r *http.Request) {
 		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
 		h.Div(
 			linkButton("/monitor/history/"+site+"/day", "History"),
-			linkButton("/monitor/pause/"+site, "Pause"),
+			g.If(monitor.Active, linkButton("/monitor/pause/"+site, "Pause")),
+			g.If(!monitor.Active, linkButton("/monitor/resume/"+site, "Resume")),
 			linkButton("/monitor/edit/"+site, "Edit"),
 			linkButton("/monitor/delete/"+site, "Delete"),
 			linkButton("/", "Home"),
@@ -983,4 +986,36 @@ func details(w http.ResponseWriter, r *http.Request) {
 	}).Render(w); err != nil {
 		log.Println("render err", err)
 	}
+}
+
+func pauseMonitor(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	monitor.Active = false
+	if err := saveMonitor(monitor, true); err != nil {
+		displayError(w, err)
+		return
+	}
+	reset <- syscall.SIGHUP
+	details(w, r)
+}
+
+func resumeMonitor(w http.ResponseWriter, r *http.Request) {
+	site := r.PathValue("site")
+	monitor, err := getMonitor(site)
+	if err != nil {
+		displayError(w, err)
+		return
+	}
+	monitor.Active = true
+	if err := saveMonitor(monitor, true); err != nil {
+		displayError(w, err)
+		return
+	}
+	reset <- syscall.SIGHUP
+	details(w, r)
 }
