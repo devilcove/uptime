@@ -27,7 +27,7 @@ var (
 	errNoKey          = errors.New("no such key")
 	errUser           = errors.New("user exists")
 	errNoUser         = errors.New("no such user")
-	errNotImplemented = errors.New("not implemented") //nolint:unused
+	errNotImplemented = errors.New("not implemented")
 )
 
 // openDB Opens, creates if non-existent, db file in XDG_DATA_HOME/uptime.db
@@ -184,7 +184,7 @@ func getHistoryDetails(monitor string, ok int) (Details, error) {
 	return details, err
 }
 
-func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) { //nolint:cyclop
+func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) {
 	var good, total float64
 	var status Status
 	var responseTime int

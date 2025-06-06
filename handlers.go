@@ -42,7 +42,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func logs(w http.ResponseWriter, r *http.Request) { //nolint:revive,varnamelen
+func logs(w http.ResponseWriter, r *http.Request) {
 	logs, err := os.ReadFile("uptime.log")
 	if err != nil {
 		log.Println("get logs", err)
@@ -335,7 +335,7 @@ func createMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
-		w.Write([]byte("not implemented yet")) //nolint:errcheck
+		displayError(w, errNotImplemented)
 		return
 	}
 	if !validateURL(monitor.URL) {
@@ -351,7 +351,7 @@ func createMonitor(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func editMonitor(w http.ResponseWriter, r *http.Request) { //nolint:funlen
+func editMonitor(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
 	monitor, err := getMonitor(site)
 	if err != nil {
@@ -508,7 +508,7 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 	monitor.StatusOK = ok
 	if monitor.Type == PING {
-		w.Write([]byte("not implemented yet")) //nolint:errcheck
+		displayError(w, errNotImplemented)
 		return
 	}
 	if !validateURL(monitor.URL) {
@@ -615,7 +615,7 @@ func notifications(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newNotification(w http.ResponseWriter, r *http.Request) { //nolint:funlen
+func newNotification(w http.ResponseWriter, r *http.Request) {
 	if err := layoutExtra("New Notification", []g.Node{
 		h.H1(g.Text("New Notifications")),
 		h.Form(
@@ -752,7 +752,7 @@ func createNotification(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
-func displayEditnotification(w http.ResponseWriter, r *http.Request) { //nolint:cyclop,funlen
+func displayEditnotification(w http.ResponseWriter, r *http.Request) {
 	notify := r.PathValue("notify")
 	notifyType, notification, err := getNotify(notify)
 	if err != nil {
@@ -764,46 +764,9 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) { //nolint:
 		displayError(w, err)
 		return
 	}
-	var table, hidden g.Node
-	switch notifyType {
-	case Slack:
-		var notify SlackNotifier
-		if err := json.Unmarshal(notification, &notify); err != nil {
-			log.Println("-------------problem", string(notification))
-		}
-		table = h.Table(
-			inputTableRow("Token", "token", "text", notify.Token, "60"),
-			inputTableRow("Channel", "channel", "text", notify.Channel, "60"),
-		)
-		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("slack"))
-	case Discord:
-		var notify DisordNotifier
-		if err := json.Unmarshal(notification, &notify); err != nil {
-			log.Println("-------------problem", string(notification))
-		}
-		table = h.Table(
-			inputTableRow("Webhook URL", "webhook", "text", notify.URL, "60"),
-		)
-		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("discord"))
-	case MailGun:
-		var notify MailGunNotifier
-		if err := json.Unmarshal(notification, &notify); err != nil {
-			log.Println("-------------problem", string(notification))
-		}
-		table = h.Table(
-			inputTableRow("API Key", "apikey", "text", notify.APIKey, "60"),
-			inputTableRow("Email Domain", "domain", "text", notify.Domain, "60"),
-			inputTableRow("Recipient Email(s)", "email", "text", strings.Join(notify.Recipients, ","), "60"),
-		)
-		hidden = h.Input(h.Name("type"), h.Type("hidden"), h.Value("mailgun"))
-	case Email:
-		displayError(w, errors.New("notification type not yet implemented"))
-		return
-	case SMS:
-		displayError(w, errors.New("notification type not yet implemented"))
-		return
-	default:
-		displayError(w, errors.New("invalid notification type"))
+	table, hidden, err := notificationForm(notifyType, notification)
+	if err != nil {
+		displayError(w, err)
 		return
 	}
 	if err := layout("Edit Notification", []g.Node{
@@ -938,7 +901,7 @@ func editMailgunNotification(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/notifications/", http.StatusFound)
 }
 
-func details(w http.ResponseWriter, r *http.Request) { //nolint:funlen
+func details(w http.ResponseWriter, r *http.Request) {
 	site := r.PathValue("site")
 	monitor, err := getMonitor(site)
 	if err != nil {

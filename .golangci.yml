@@ -1,6 +1,12 @@
 version: "2"
 linters:
   default: all
+  settings:
+    cyclop:
+      max-complexity: 12
+    funlen:
+      lines: -1
+      statements: 51
   disable:
     - ireturn
     - contextcheck
