@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/sessions v1.4.0
 	github.com/mailgun/mailgun-go/v5 v5.4.0
 	go.etcd.io/bbolt v1.4.0
-	golang.org/x/crypto v0.38.0
+	golang.org/x/crypto v0.39.0
 	maragu.dev/gomponents v1.1.0
 )
 
