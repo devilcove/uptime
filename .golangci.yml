@@ -1,4 +1,6 @@
 version: "2"
+run:
+  timeout: 5m
 linters:
   default: all
   settings:
@@ -6,12 +8,11 @@ linters:
       max-complexity: 12
     funlen:
       lines: -1
-      statements: 51
+      statements: 50
   disable:
     - ireturn
     - contextcheck
     - err113
-    - godot
     - exhaustive
     - tagliatelle
     - fatcontext
@@ -29,15 +30,12 @@ linters:
     - wsl
   exclusions:
     generated: lax
+    warn-unused: true
     presets:
       - comments
       - common-false-positives
       - legacy
       - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
 formatters:
   enable:
     - gci
@@ -46,7 +44,3 @@ formatters:
     - goimports
   exclusions:
     generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
