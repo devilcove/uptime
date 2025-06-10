@@ -10,7 +10,7 @@ import (
 	"github.com/mailgun/mailgun-go/v5"
 )
 
-// MailGunNotifier holds data to send emails via MailGun
+// MailGunNotifier holds data to send emails via MailGun.
 type MailGunNotifier struct {
 	Name       string
 	APIKey     string

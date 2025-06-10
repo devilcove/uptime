@@ -5,47 +5,6 @@ import (
 	"net/http"
 )
 
-// Middleware provides a chain of middlewares.
-type Middleware struct {
-	chain http.Handler
-}
-
-// DefaultMiddleware creates a default middleware using DefaultServeMux.
-func DefaultMiddleware() *Middleware {
-	return &Middleware{http.DefaultServeMux}
-}
-
-// NewMiddleware returns a new middleware.
-func NewMiddleware(handler http.Handler) *Middleware {
-	return &Middleware{handler}
-}
-
-// Router creates a severMux for given prefix and middleware chain.
-func Router(prefix string, middleware ...func(http.Handler) http.Handler) *http.ServeMux {
-	mux := http.NewServeMux()
-	middle := NewMiddleware(mux)
-	middle.UseGroup(middleware...)
-	http.Handle(prefix+"/", http.StripPrefix(prefix, middle))
-	return mux
-}
-
-// Use adds middleware to the chain.
-func (a *Middleware) Use(handler func(http.Handler) http.Handler) {
-	a.chain = handler(a.chain)
-}
-
-// UseGroup adds a chain of middlewares.
-func (a *Middleware) UseGroup(handlers ...func(http.Handler) http.Handler) {
-	for _, handler := range handlers {
-		a.Use(handler)
-	}
-}
-
-// ServeHTTP implements http.Handler interface.
-func (a *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.chain.ServeHTTP(w, r)
-}
-
 // Logger is a logging middleware that logs useragent, RemoteAddr, Method, Host, Path and response.Status to stdlib log.
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

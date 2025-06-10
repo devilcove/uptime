@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// slack types
+// slack types.
 type SlackNotifier struct {
 	Name    string
 	Token   string

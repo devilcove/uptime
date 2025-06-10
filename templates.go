@@ -6,7 +6,7 @@ import (
 	"maragu.dev/gomponents/html"
 )
 
-func layout(title string, nodes []gomponents.Node) gomponents.Node { //nolint:ireturn
+func layout(title string, nodes []gomponents.Node) gomponents.Node {
 	return components.HTML5(components.HTML5Props{
 		Title:    title,
 		Language: "en",

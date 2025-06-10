@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// discord types
+// discord types.
 type DisordNotifier struct {
 	Name string
 	URL  string

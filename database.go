@@ -27,10 +27,10 @@ var (
 	errNoKey          = errors.New("no such key")
 	errUser           = errors.New("user exists")
 	errNoUser         = errors.New("no such user")
-	errNotImplemented = errors.New("not implemented") //nolint:unused
+	errNotImplemented = errors.New("not implemented")
 )
 
-// openDB Opens, creates if non-existent, db file in XDG_DATA_HOME/uptime.db
+// openDB Opens, creates if non-existent, db file in XDG_DATA_HOME/uptime.db.
 func openDB() error {
 	var err error
 	xdg, ok := os.LookupEnv("XDG_DATA_HOME")
@@ -47,7 +47,7 @@ func openDB() error {
 	return nil
 }
 
-// createBucket creates and return bucket at given path, intermediate buckets along path are also created
+// createBucket creates and return bucket at given path, intermediate buckets along path are also created.
 func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	if path == nil {
 		return nil
@@ -65,7 +65,7 @@ func createBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	return bucket
 }
 
-// getBucket returns bucket at given path
+// getBucket returns bucket at given path.
 func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	bucket := tx.Bucket([]byte(path[0]))
 	for _, name := range path[1:] {
@@ -74,7 +74,7 @@ func getBucket(path []string, tx *bbolt.Tx) *bbolt.Bucket {
 	return bucket
 }
 
-// getKey return value of key at given path
+// getKey return value of key at given path.
 func getKey(path []string, tx *bbolt.Tx) []byte {
 	bucket := getBucket(path[:len(path)-1], tx)
 	if bucket == nil {
@@ -84,14 +84,14 @@ func getKey(path []string, tx *bbolt.Tx) []byte {
 	return value
 }
 
-// keyExists returns true if key exists at given path
+// keyExists returns true if key exists at given path.
 func keyExists(path []string, tx *bbolt.Tx) bool {
 	key := getKey(path, tx)
 	return key != nil
 }
 
 // addKey creates a new key with name, value in bucket at path, bucket and intermediate buckets
-// will be created if not existing
+// will be created if not existing.
 func addKey(name string, path []string, value []byte) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := createBucket(path, tx)
@@ -99,7 +99,7 @@ func addKey(name string, path []string, value []byte) error {
 	})
 }
 
-// getStatus return the name status
+// getStatus return the name status.
 func getStatus(name string) (Status, error) {
 	status := Status{}
 	path := []string{"status", name}
@@ -133,7 +133,7 @@ func purgeHistData(site, date string) error {
 	})
 }
 
-// getHistory returns array of status values from the given path for the given timeframe
+// getHistory returns array of status values from the given path for the given timeframe.
 func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
@@ -184,7 +184,7 @@ func getHistoryDetails(monitor string, ok int) (Details, error) {
 	return details, err
 }
 
-func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) { //nolint:cyclop
+func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error) {
 	var good, total float64
 	var status Status
 	var responseTime int
@@ -227,7 +227,7 @@ func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error)
 	return responseTime / int(total), good / total * 100, nil
 }
 
-// getMonitors returns array of all Monitor structs
+// getMonitors returns array of all Monitor structs.
 func getMonitors() ([]Monitor, error) {
 	monitors := []Monitor{}
 	monitor := Monitor{}
@@ -244,7 +244,7 @@ func getMonitors() ([]Monitor, error) {
 	return monitors, err
 }
 
-// getMonitor returns monitor struct of given name
+// getMonitor returns monitor struct of given name.
 func getMonitor(name string) (Monitor, error) {
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -258,7 +258,7 @@ func getMonitor(name string) (Monitor, error) {
 	return monitor, err
 }
 
-// saveMonitor save Monitor in database
+// saveMonitor save Monitor in database.
 func saveMonitor(monitor Monitor, update bool) error {
 	bytes, err := json.Marshal(monitor)
 	if err != nil {
@@ -280,7 +280,7 @@ func saveMonitor(monitor Monitor, update bool) error {
 	})
 }
 
-// removeMonitor deletes the name monitor from database
+// removeMonitor deletes the named monitor from database.
 func removeMonitor(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("monitors"))
@@ -288,7 +288,7 @@ func removeMonitor(name string) error {
 	})
 }
 
-// deleteHistory deletes named history bucket
+// deleteHistory deletes named history bucket.
 func deleteHistory(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("history"))
@@ -300,7 +300,7 @@ func deleteHistory(name string) error {
 	})
 }
 
-// validateUser confirms provide username/password matches username/password in da
+// validateUser confirms provide username/password matches username/password in db.
 func validateUser(user User) bool {
 	var truth User
 	if err := db.View(func(tx *bbolt.Tx) error {
@@ -320,7 +320,7 @@ func validateUser(user User) bool {
 	return true
 }
 
-// setPass encrypts password
+// setPass encrypts password.
 func setPass(user User) (User, error) {
 	pass, err := bcrypt.GenerateFromPassword([]byte(user.Pass), bcrypt.DefaultCost)
 	if err != nil {
@@ -331,7 +331,7 @@ func setPass(user User) (User, error) {
 	return user, nil
 }
 
-// checkAdmin checks if given username is an admin
+// checkAdmin checks if given username is an admin.
 func checkAdmin(name string) bool {
 	var user User
 	if err := db.View(func(tx *bbolt.Tx) error {
@@ -347,7 +347,7 @@ func checkAdmin(name string) bool {
 	return user.Admin
 }
 
-// getUsers returns array of all users in db; password is nulled
+// getUsers returns array of all users in db; password is nulled.
 func getUsers() []User {
 	var user User
 	var users []User
@@ -368,7 +368,7 @@ func getUsers() []User {
 	return users
 }
 
-// getUers returns user struct for named user
+// getUers returns user struct for named user.
 func getUser(name string) User {
 	var user User
 	if err := db.View(func(tx *bbolt.Tx) error {
@@ -381,7 +381,7 @@ func getUser(name string) User {
 	return user
 }
 
-// insertUser creates a new user in db
+// insertUser creates a new user in db.
 func insertUser(user User) error {
 	var err error
 	user, err = setPass(user)
@@ -402,7 +402,7 @@ func insertUser(user User) error {
 	})
 }
 
-// modifyUser updates a user in db
+// modifyUser updates a user in db.
 func modifyUser(user User) error {
 	var err error
 	user, err = setPass(user)
@@ -423,7 +423,7 @@ func modifyUser(user User) error {
 	})
 }
 
-// removeUser deletes a user from db
+// removeUser deletes a user from db.
 func removeUser(name string) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("users"))
@@ -435,7 +435,7 @@ func removeUser(name string) error {
 	})
 }
 
-// removeNotify deletes the name notification bucket
+// removeNotify deletes the name notification bucket.
 func removeNotify(name string) error {
 	monitor := Monitor{}
 	return db.Update(func(tx *bbolt.Tx) error {
@@ -464,7 +464,7 @@ func removeNotify(name string) error {
 	})
 }
 
-// createNofify inserts a new nofification bucket into database
+// createNofify inserts a new nofification bucket into database.
 func createNotify(name string, notifyType NotifyType, data any) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("notify"))
@@ -486,7 +486,7 @@ func createNotify(name string, notifyType NotifyType, data any) error {
 	})
 }
 
-// updateNotify updates an existing notification bucket
+// updateNotify updates an existing notification bucket.
 func updateNotify(name string, notifyType NotifyType, data any) error {
 	log.Println("update notification", notifyType, data)
 	return db.Update(func(tx *bbolt.Tx) error {
@@ -506,7 +506,7 @@ func updateNotify(name string, notifyType NotifyType, data any) error {
 	})
 }
 
-// getNotify retrieves named notification data
+// getNotify retrieves named notification data.
 func getNotify(name string) (NotifyType, []byte, error) {
 	var notifyType NotifyType
 	var data []byte
@@ -526,7 +526,7 @@ func getNotify(name string) (NotifyType, []byte, error) {
 	return notifyType, data, err
 }
 
-// getAllNotifications retrieves array of Notification data from db
+// getAllNotifications retrieves array of Notification data from db.
 func getAllNotifications() []Notification {
 	var notifications []Notification
 	var notification Notification

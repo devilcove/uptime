@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -251,4 +255,51 @@ func radioGroup(label, name string, radios []Radio) g.Node {
 		h.Td(h.Label(h.For(name), g.Text(label))),
 		h.Td(g.Group(inputs)),
 	)
+}
+
+func notificationForm(kind NotifyType, notification []byte) (g.Node, g.Node, error) {
+	switch kind {
+	case Slack:
+		var n SlackNotifier
+		if err := json.Unmarshal(notification, &n); err != nil {
+			return nil, nil, fmt.Errorf("invalid slack payload: %w", err)
+		}
+		return h.Table(
+				inputTableRow("Token", "token", "text", n.Token, "60"),
+				inputTableRow("Channel", "channel", "text", n.Channel, "60"),
+			),
+			h.Input(h.Name("type"), h.Type("hidden"), h.Value("slack")),
+			nil
+
+	case Discord:
+		var n DisordNotifier
+		if err := json.Unmarshal(notification, &n); err != nil {
+			return nil, nil, fmt.Errorf("invalid discord payload: %w", err)
+		}
+		return h.Table(
+				inputTableRow("Webhook URL", "webhook", "text", n.URL, "60"),
+			),
+			h.Input(h.Name("type"), h.Type("hidden"), h.Value("discord")),
+			nil
+
+	case MailGun:
+		var n MailGunNotifier
+		if err := json.Unmarshal(notification, &n); err != nil {
+			return nil, nil, fmt.Errorf("invalid mailgun payload: %w", err)
+		}
+		return h.Table(
+				inputTableRow("API Key", "apikey", "text", n.APIKey, "60"),
+				inputTableRow("Email Domain", "domain", "text", n.Domain, "60"),
+				inputTableRow("Recipient Email(s)", "email", "text",
+					strings.Join(n.Recipients, ","), "60"),
+			),
+			h.Input(h.Name("type"), h.Type("hidden"), h.Value("mailgun")),
+			nil
+
+	case Email, SMS:
+		return nil, nil, errors.New("notification type not yet implemented")
+
+	default:
+		return nil, nil, errors.New("invalid notification type")
+	}
 }
