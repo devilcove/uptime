@@ -488,7 +488,7 @@ func createNotify(name string, notifyType NotifyType, data any) error {
 
 // updateNotify updates an existing notification bucket.
 func updateNotify(name string, notifyType NotifyType, data any) error {
-	log.Println("update notification", notifyType, data)
+	log.Println("update notification", name, notifyType, data)
 	return db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("notify"))
 		if bucket == nil {

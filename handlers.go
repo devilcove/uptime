@@ -772,7 +772,7 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) {
 	if err := layout("Edit Notification", []g.Node{
 		h.H1(g.Text("Edit Notification")),
 		h.H2(g.Text("Notifications Name: " + n.Name)),
-		h.Form(h.Method("post"), h.Action("/notification/edit"),
+		h.Form(h.Method("post"), h.Action("/notifications/edit/"+n.Name),
 			table,
 			hidden,
 			linkButton("/notifications/", "Cancel"),

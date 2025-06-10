@@ -2,10 +2,8 @@ module github.com/devilcove/uptime
 
 go 1.23.1
 
-toolchain go1.24.3
 
 require (
-	github.com/goforj/godump v1.1.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/mailgun/mailgun-go/v5 v5.4.0
 	go.etcd.io/bbolt v1.4.0
