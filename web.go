@@ -18,7 +18,7 @@ const (
 
 var store *sessions.CookieStore //nolint:gochecknoglobals
 
-func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
+func web(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	store = sessions.NewCookieStore(randBytes(sessionBytes))
 	store.MaxAge(cookieAge)
@@ -26,49 +26,48 @@ func web(ctx context.Context, wg *sync.WaitGroup) { //nolint:funlen
 	store.Options.SameSite = http.SameSiteStrictMode
 	log.Println("starting web server")
 
-	logger := NewMiddleware(http.DefaultServeMux)
+	router := NewRouter(Logger)
 
-	logger.Use(Logger)
-	http.HandleFunc("/favicon.ico", favicon)
-	http.HandleFunc("/logout", logout)
-	http.HandleFunc("GET /login", displayLogin)
-	http.HandleFunc("POST /login", login)
-	http.HandleFunc("/styles.css", styles)
+	router.Get("/favicon.ico", favicon)
+	router.Get("/logout", logout)
+	router.Get("/login", displayLogin)
+	router.Post("/login", login)
+	router.Get("/styles.css", styles)
 
-	plain := Router("", auth)
-	plain.HandleFunc("/{$}", mainPage)
-	plain.HandleFunc("/logs", logs)
+	plain := router.Group("", auth)
+	plain.Get("/{$}", mainPage)
+	plain.Get("/logs", logs)
 
-	user := Router("/user", auth)
-	user.HandleFunc("GET /{$}", admin)
-	user.HandleFunc("GET /{user}", editUser)
-	user.HandleFunc("POST /delete/{user}", deleteUser)
-	user.HandleFunc("POST /add", addUser)
-	user.HandleFunc("POST /{user}", updateUser)
+	user := router.Group("/user", auth)
+	user.Get("/{$}", admin)
+	user.Get("/{user}", editUser)
+	user.Post("/delete/{user}", deleteUser)
+	user.Post("/add", addUser)
+	user.Post("/{user}", updateUser)
 
-	monitor := Router("/monitor", auth)
-	monitor.HandleFunc("GET /details/{site}", details)
-	monitor.HandleFunc("GET /pause/{site}", pauseMonitor)
-	monitor.HandleFunc("GET /resume/{site}", resumeMonitor)
-	monitor.HandleFunc("GET /new", newMonitor)
-	monitor.HandleFunc("POST /new", createMonitor)
-	monitor.HandleFunc("GET /delete/{site}", deleteSite)
-	monitor.HandleFunc("POST /delete/{site}", deleteMonitor)
-	monitor.HandleFunc("GET /edit/{site}", editMonitor)
-	monitor.HandleFunc("POST /edit/{site}", updateMonitor)
-	monitor.HandleFunc("GET /history/{site}/{duration}", history)
-	monitor.HandleFunc("POST /history/purge/{site}", purgeHistory)
+	monitor := router.Group("/monitor", auth)
+	monitor.Get("/details/{site}", details)
+	monitor.Get("/pause/{site}", pauseMonitor)
+	monitor.Get("/resume/{site}", resumeMonitor)
+	monitor.Get("/new", newMonitor)
+	monitor.Post("/new", createMonitor)
+	monitor.Get("/delete/{site}", deleteSite)
+	monitor.Post("/delete/{site}", deleteMonitor)
+	monitor.Get("/edit/{site}", editMonitor)
+	monitor.Post("/edit/{site}", updateMonitor)
+	monitor.Get("/history/{site}/{duration}", history)
+	monitor.Post("/history/purge/{site}", purgeHistory)
 
-	notification := Router("/notifications", auth)
-	notification.HandleFunc("GET /", notifications)
-	notification.HandleFunc("GET /new", newNotification)
-	notification.HandleFunc("POST /new", createNotification)
-	notification.HandleFunc("POST /delete/{notify}", deleletNotification)
-	notification.HandleFunc("GET /edit/{notify}", displayEditnotification)
-	notification.HandleFunc("POST /edit/{notify}", editNotification)
-	notification.HandleFunc("GET /test/{notify}", testNotification)
+	notification := router.Group("/notifications", auth)
+	notification.Get("/", notifications)
+	notification.Get("/new", newNotification)
+	notification.Post("/new", createNotification)
+	notification.Post("/delete/{notify}", deleletNotification)
+	notification.Get("/edit/{notify}", displayEditnotification)
+	notification.Post("/edit/{notify}", editNotification)
+	notification.Get("/test/{notify}", testNotification)
 
-	server := http.Server{Addr: httpAddr, ReadHeaderTimeout: time.Second, Handler: logger} //nolint:exhaustruct
+	server := http.Server{Addr: httpAddr, ReadHeaderTimeout: time.Second, Handler: router} //nolint:exhaustruct
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			log.Println("web server", err)
