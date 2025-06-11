@@ -894,7 +894,7 @@ func editMailgunNotification(w http.ResponseWriter, r *http.Request) {
 		Name:       r.PathValue("notify"),
 		APIKey:     r.FormValue("apikey"),
 		Domain:     r.FormValue("domain"),
-		Recipients: strings.Split(r.FormValue("recipients"), ","),
+		Recipients: strings.Split(r.FormValue("email"), ","),
 	}
 	if err := updateNotify(notification.Name, Slack, notification); err != nil {
 		displayError(w, err)

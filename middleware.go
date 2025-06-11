@@ -31,7 +31,6 @@ func (rec *statusRecorder) WriteHeader(code int) {
 
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("checking authorization")
 		session, err := sessionData(r)
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
