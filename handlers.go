@@ -483,6 +483,7 @@ func deleteMonitor(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateMonitor(w http.ResponseWriter, r *http.Request) {
+	notifications := getAllNotifications()
 	if err := r.ParseForm(); err != nil {
 		log.Println("parse form", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -501,9 +502,11 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	for key, value := range r.Form {
-		if key == "notifications" {
-			monitor.Notifiers = append(monitor.Notifiers, value...)
+	// check notifications
+	for _, n := range notifications {
+		notification := r.FormValue(n.Name)
+		if notification == "on" {
+			monitor.Notifiers = append(monitor.Notifiers, n.Name)
 		}
 	}
 	monitor.StatusOK = ok
