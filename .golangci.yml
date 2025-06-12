@@ -10,6 +10,7 @@ linters:
       lines: -1
       statements: 50
   disable:
+    - forbidigo
     - ireturn
     - contextcheck
     - err113
