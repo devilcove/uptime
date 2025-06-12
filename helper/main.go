@@ -43,7 +43,7 @@ func main() {
 	}
 	user.Name = strings.TrimSuffix(name, "\n")
 	fmt.Println("Enter password")
-	passBytes, err := term.ReadPassword(int(syscall.Stdin))
+	passBytes, err := term.ReadPassword(syscall.Stdin)
 	if err != nil {
 		panic(err)
 	}
