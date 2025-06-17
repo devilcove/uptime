@@ -33,9 +33,9 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 	router.Get("/login", displayLogin)
 	router.Post("/login", login)
 	router.Get("/styles.css", styles)
+	router.Get("/{$}", mainPage)
 
 	plain := router.Group("", auth)
-	plain.Get("/{$}", mainPage)
 	plain.Get("/logs", logs)
 
 	user := router.Group("/user", auth)
