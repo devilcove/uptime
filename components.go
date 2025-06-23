@@ -101,9 +101,12 @@ func statusTable() g.Node {
 	)
 	rows = append(rows, header)
 	for _, m := range monitors {
-		name := h.Button(g.Text(m.Name), h.Style("background:red"), h.Title("Paused"))
+		name := h.Button(g.Text(m.Name), h.Style("background:yellow;color:black;"), h.Title("Paused"))
 		if m.Active {
-			name = h.Button(g.Text(m.Name), h.Style("background:green"), h.Title("Active"))
+			name = h.Button(g.Text(m.Name), h.Style("background:red"), h.Title("Down"))
+			if m.DisplayStatus {
+				name = h.Button(g.Text(m.Name), h.Style("background:green"), h.Title("Active"))
+			}
 		}
 		row := h.Tr(
 			h.Td(name),
