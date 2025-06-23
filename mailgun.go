@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,7 +32,9 @@ func (m *MailGunNotifier) SendNotification(msg string) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, "https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
 	if err != nil {
 		return err
 	}

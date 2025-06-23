@@ -100,8 +100,15 @@ func (m *Monitor) checkHTTP() Status {
 		log.Println("Defaulting to 60 second timeout; configured was", m.Timeout)
 		timeout = time.Second * 60
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.URL, nil)
+	if err != nil {
+		s.Status = err.Error()
+		return s
+	}
 	client := http.Client{Timeout: timeout}
-	resp, err := client.Get(m.URL)
+	resp, err := client.Do(req)
 	s.ResponseTime = time.Since(s.Time)
 	if err != nil {
 		s.Status = err.Error()

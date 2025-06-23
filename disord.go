@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -35,7 +36,9 @@ func (d *DisordNotifier) Send(data DiscordMessage) error {
 		log.Println("marshal discord message", err)
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, d.URL, bytes.NewBuffer(payload))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.URL, bytes.NewBuffer(payload))
 	if err != nil {
 		log.Println("new request", err)
 		return err

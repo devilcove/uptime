@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -91,7 +92,9 @@ func (slack *SlackNotifier) Send(data SlackMessage) error {
 		log.Println("marshal slack Message", err)
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, "https://slack.com/api/chat.postMessage", bytes.NewBuffer(payload))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://slack.com/api/chat.postMessage", bytes.NewBuffer(payload))
 	if err != nil {
 		log.Println("new request", err)
 		return err
@@ -106,7 +109,9 @@ func (slack *SlackNotifier) Send(data SlackMessage) error {
 
 func (s *SlackNotifier) getChannel() (string, error) {
 	var channel string
-	req, err := http.NewRequest(http.MethodGet, "https://slack.com/api/conversations.list", nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://slack.com/api/conversations.list", nil)
 	if err != nil {
 		log.Println("request", err)
 		return channel, err

@@ -15,7 +15,6 @@ linters:
     - exhaustive
     - tagliatelle
     - fatcontext
-    - noctx
     - mnd
     - musttag
     - revive
