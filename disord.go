@@ -30,14 +30,12 @@ type DiscordEmbed struct {
 	Description string `json:"description,omitempty"`
 }
 
-func (d *DisordNotifier) Send(data DiscordMessage) error {
+func (d *DisordNotifier) Send(ctx context.Context, data DiscordMessage) error {
 	payload, err := json.Marshal(data)
 	if err != nil {
 		log.Println("marshal discord message", err)
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.URL, bytes.NewBuffer(payload))
 	if err != nil {
 		log.Println("new request", err)
@@ -60,7 +58,7 @@ func (d *DisordNotifier) Send(data DiscordMessage) error {
 	return nil
 }
 
-func sendDiscordStatusNotification(notification []byte, status Status) error {
+func sendDiscordStatusNotification(ctx context.Context, notification []byte, status Status) error {
 	var discord DisordNotifier
 	if err := json.Unmarshal(notification, &discord); err != nil {
 		return err
@@ -81,10 +79,10 @@ func sendDiscordStatusNotification(notification []byte, status Status) error {
 			},
 		},
 	}
-	return discord.Send(data)
+	return discord.Send(ctx, data)
 }
 
-func sendDiscordCertExpiryNotification(notification []byte, status Status) error {
+func sendDiscordCertExpiryNotification(ctx context.Context, notification []byte, status Status) error {
 	var discord DisordNotifier
 	if err := json.Unmarshal(notification, &discord); err != nil {
 		return err
@@ -105,10 +103,10 @@ func sendDiscordCertExpiryNotification(notification []byte, status Status) error
 			},
 		},
 	}
-	return discord.Send(data)
+	return discord.Send(ctx, data)
 }
 
-func sendDiscordTestNotification(notification []byte) error {
+func sendDiscordTestNotification(ctx context.Context, notification []byte) error {
 	var discord DisordNotifier
 	if err := json.Unmarshal(notification, &discord); err != nil {
 		return err
@@ -129,5 +127,5 @@ func sendDiscordTestNotification(notification []byte) error {
 			},
 		},
 	}
-	return discord.Send(data)
+	return discord.Send(ctx, data)
 }

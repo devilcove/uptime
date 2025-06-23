@@ -27,13 +27,11 @@ type MailGunMessage struct {
 	Text    string   `json:"text,omitempty"`
 }
 
-func (m *MailGunNotifier) SendNotification(msg string) error {
+func (m *MailGunNotifier) SendNotification(ctx context.Context, msg string) error {
 	ct, body, err := m.Form(msg)
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
 	if err != nil {
 		return err
@@ -56,30 +54,30 @@ func (m *MailGunNotifier) SendNotification(msg string) error {
 	return nil
 }
 
-func sendMailGunTestNotification(notification []byte) error {
+func sendMailGunTestNotification(ctx context.Context, notification []byte) error {
 	var m MailGunNotifier
 	if err := json.Unmarshal(notification, &m); err != nil {
 		return err
 	}
-	return m.SendNotification("test message from uptime monitor")
+	return m.SendNotification(ctx, "test message from uptime monitor")
 }
 
-func sendMailGunStatusNotification(notification []byte, status Status) error {
+func sendMailGunStatusNotification(ctx context.Context, notification []byte, status Status) error {
 	var mailgun MailGunNotifier
 	if err := json.Unmarshal(notification, &mailgun); err != nil {
 		return err
 	}
-	return mailgun.SendNotification(
+	return mailgun.SendNotification(ctx,
 		fmt.Sprintf("Uptime Status Message\n%s %s \nStatus %s",
 			status.Site, status.URL, status.Status))
 }
 
-func sendMailGunCertExpiryNotification(notification []byte, s Status) error {
+func sendMailGunCertExpiryNotification(ctx context.Context, notification []byte, s Status) error {
 	var mailgun MailGunNotifier
 	if err := json.Unmarshal(notification, &mailgun); err != nil {
 		return err
 	}
-	return mailgun.SendNotification(
+	return mailgun.SendNotification(ctx,
 		(fmt.Sprintf("Uptime Certificate Expiry Message\n%s %s\n Certificate will expire in %d days",
 			s.Site, s.URL, s.CertExpiry)))
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -816,19 +817,21 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 		displayError(w, err)
 		return
 	}
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second)
+	defer cancel()
 	switch kind {
 	case Slack:
-		if err := sendSlackTestNotification(notification); err != nil {
+		if err := sendSlackTestNotification(ctx, notification); err != nil {
 			displayError(w, err)
 			return
 		}
 	case Discord:
-		if err := sendDiscordTestNotification(notification); err != nil {
+		if err := sendDiscordTestNotification(ctx, notification); err != nil {
 			displayError(w, err)
 			return
 		}
 	case MailGun:
-		if err := sendMailGunTestNotification(notification); err != nil {
+		if err := sendMailGunTestNotification(ctx, notification); err != nil {
 			displayError(w, err)
 			return
 		}

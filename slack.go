@@ -80,8 +80,8 @@ type Attachment struct {
 	Text    string `json:"text"`
 }
 
-func (slack *SlackNotifier) Send(data SlackMessage) error {
-	channel, err := slack.getChannel()
+func (slack *SlackNotifier) Send(ctx context.Context, data SlackMessage) error {
+	channel, err := slack.getChannel(ctx)
 	if err != nil {
 		log.Println("get slack channel", err)
 		return err
@@ -92,9 +92,7 @@ func (slack *SlackNotifier) Send(data SlackMessage) error {
 		log.Println("marshal slack Message", err)
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://slack.com/api/chat.postMessage", bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://slack.com/api/chat.postMessage", bytes.NewBuffer(payload)) //nolint:lll
 	if err != nil {
 		log.Println("new request", err)
 		return err
@@ -107,10 +105,8 @@ func (slack *SlackNotifier) Send(data SlackMessage) error {
 	return err
 }
 
-func (s *SlackNotifier) getChannel() (string, error) {
+func (s *SlackNotifier) getChannel(ctx context.Context) (string, error) {
 	var channel string
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://slack.com/api/conversations.list", nil)
 	if err != nil {
 		log.Println("request", err)
@@ -143,7 +139,7 @@ func (s *SlackNotifier) getChannel() (string, error) {
 	return channel, errNotFound
 }
 
-func sendSlackStatusNotification(notification []byte, status Status) error {
+func sendSlackStatusNotification(ctx context.Context, notification []byte, status Status) error {
 	var slack SlackNotifier
 	if err := json.Unmarshal(notification, &slack); err != nil {
 		return err
@@ -161,10 +157,10 @@ func sendSlackStatusNotification(notification []byte, status Status) error {
 			},
 		},
 	}
-	return slack.Send(data)
+	return slack.Send(ctx, data)
 }
 
-func sendSlackTestNotification(notification []byte) error {
+func sendSlackTestNotification(ctx context.Context, notification []byte) error {
 	var slack SlackNotifier
 	if err := json.Unmarshal(notification, &slack); err != nil {
 		return err
@@ -182,10 +178,10 @@ func sendSlackTestNotification(notification []byte) error {
 			},
 		},
 	}
-	return slack.Send(data)
+	return slack.Send(ctx, data)
 }
 
-func sendSlackCertExpiryNotification(notification []byte, status Status) error {
+func sendSlackCertExpiryNotification(ctx context.Context, notification []byte, status Status) error {
 	var slack SlackNotifier
 	if err := json.Unmarshal(notification, &slack); err != nil {
 		return err
@@ -203,5 +199,5 @@ func sendSlackCertExpiryNotification(notification []byte, status Status) error {
 			},
 		},
 	}
-	return slack.Send(data)
+	return slack.Send(ctx, data)
 }

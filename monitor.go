@@ -42,16 +42,16 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
 			log.Println(m.Name, "shutting down")
 			return
 		case <-ticker.C:
-			m.updateStatus()
+			m.updateStatus(ctx)
 		case <-timer.C:
-			m.updateStatus()
+			m.updateStatus(ctx)
 		}
 	}
 }
 
-func (m *Monitor) updateStatus() {
+func (m *Monitor) updateStatus(ctx context.Context) {
 	var same bool
-	newStatus := m.Check()
+	newStatus := m.Check(ctx)
 	oldStatus, err := getStatus(m.Name)
 	if err != nil {
 		log.Println("get old Status", m.Name, err)
@@ -64,10 +64,10 @@ func (m *Monitor) updateStatus() {
 		}
 	} else {
 		log.Println("status change", m.Name, "monitor status", oldStatus.Status, "checked status", newStatus.Status)
-		m.sendStatusNotification(newStatus)
+		m.sendStatusNotification(ctx, newStatus)
 	}
 	if newStatus.CertExpiry < 10 && same {
-		m.sendCertExpiryNotification(newStatus)
+		m.sendCertExpiryNotification(ctx, newStatus)
 	}
 	bytes, err := json.Marshal(&newStatus)
 	if err != nil {
@@ -85,7 +85,7 @@ func (m *Monitor) updateStatus() {
 	log.Println("status updated", m.Name, newStatus.Status)
 }
 
-func (m *Monitor) checkHTTP() Status {
+func (m *Monitor) checkHTTP(ctx context.Context) Status {
 	s := Status{
 		Site: m.Name,
 		URL:  m.URL,
@@ -100,9 +100,9 @@ func (m *Monitor) checkHTTP() Status {
 		log.Println("Defaulting to 60 second timeout; configured was", m.Timeout)
 		timeout = time.Second * 60
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	timeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.URL, nil)
+	req, err := http.NewRequestWithContext(timeCtx, http.MethodGet, m.URL, nil)
 	if err != nil {
 		s.Status = err.Error()
 		return s
@@ -124,17 +124,17 @@ func (m *Monitor) checkHTTP() Status {
 	return s
 }
 
-func (m *Monitor) Check() Status {
+func (m *Monitor) Check(ctx context.Context) Status {
 	switch m.Type {
 	case HTTP:
-		return m.checkHTTP()
+		return m.checkHTTP(ctx)
 	default:
 		log.Println("unimplemented monitor check", m.Name, string(m.Type))
 		return Status{}
 	}
 }
 
-func (m *Monitor) sendStatusNotification(status Status) {
+func (m *Monitor) sendStatusNotification(ctx context.Context, status Status) {
 	for _, n := range m.Notifiers {
 		kind, notification, err := getNotify(n)
 		if err != nil {
@@ -143,11 +143,11 @@ func (m *Monitor) sendStatusNotification(status Status) {
 		}
 		switch kind {
 		case Slack:
-			err = sendSlackStatusNotification(notification, status)
+			err = sendSlackStatusNotification(ctx, notification, status)
 		case Discord:
-			err = sendDiscordStatusNotification(notification, status)
+			err = sendDiscordStatusNotification(ctx, notification, status)
 		case MailGun:
-			err = sendMailGunStatusNotification(notification, status)
+			err = sendMailGunStatusNotification(ctx, notification, status)
 		default:
 			err = errInvalidNoficationType
 		}
@@ -158,7 +158,7 @@ func (m *Monitor) sendStatusNotification(status Status) {
 	}
 }
 
-func (m *Monitor) sendCertExpiryNotification(status Status) {
+func (m *Monitor) sendCertExpiryNotification(ctx context.Context, status Status) {
 	for _, n := range m.Notifiers {
 		kind, notification, err := getNotify(n)
 		if err != nil {
@@ -167,11 +167,11 @@ func (m *Monitor) sendCertExpiryNotification(status Status) {
 		}
 		switch kind {
 		case Slack:
-			err = sendSlackCertExpiryNotification(notification, status)
+			err = sendSlackCertExpiryNotification(ctx, notification, status)
 		case Discord:
-			err = sendDiscordCertExpiryNotification(notification, status)
+			err = sendDiscordCertExpiryNotification(ctx, notification, status)
 		case MailGun:
-			err = sendMailGunCertExpiryNotification(notification, status)
+			err = sendMailGunCertExpiryNotification(ctx, notification, status)
 		default:
 			err = errInvalidNoficationType
 		}
