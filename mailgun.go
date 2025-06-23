@@ -1,13 +1,14 @@
 package main
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"strings"
 	"time"
-
-	"github.com/mailgun/mailgun-go/v5"
 )
 
 // MailGunNotifier holds data to send emails via MailGun.
@@ -18,18 +19,37 @@ type MailGunNotifier struct {
 	Domain     string
 }
 
-func (m *MailGunNotifier) SendNotification(body string) error {
-	mg := mailgun.NewMailgun(m.APIKey)
-	message := mailgun.NewMessage(m.Domain, "uptime@"+m.Domain, "Uptime Status Alert",
-		body, m.Recipients...)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	resp, err := mg.Send(ctx, message)
+type MailGunMessage struct {
+	To      []string `json:"to,omitempty"`
+	Subject string   `json:"subject,omitempty"`
+	From    string   `json:"from,omitempty"`
+	Text    string   `json:"text,omitempty"`
+}
+
+func (m *MailGunNotifier) SendNotification(msg string) error {
+	ct, body, err := m.Form(msg)
 	if err != nil {
-		log.Println("mailgun send", err)
 		return err
 	}
-	log.Println("mailgun response", resp.ID, resp.Message)
+	req, err := http.NewRequest(http.MethodPost, "https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", ct)
+	req.SetBasicAuth("api", m.APIKey)
+	client := http.Client{Timeout: time.Second * 10}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("mailgun error %d %s", resp.StatusCode, string(bytes))
+	}
 	return nil
 }
 
@@ -59,4 +79,23 @@ func sendMailGunCertExpiryNotification(notification []byte, s Status) error {
 	return mailgun.SendNotification(
 		(fmt.Sprintf("Uptime Certificate Expiry Message\n%s %s\n Certificate will expire in %d days",
 			s.Site, s.URL, s.CertExpiry)))
+}
+
+func (m *MailGunNotifier) Form(msg string) (string, io.Reader, error) {
+	body := new(bytes.Buffer)
+	mp := multipart.NewWriter(body)
+	defer mp.Close()
+	if err := mp.WriteField("from", "uptime@"+m.Domain); err != nil {
+		return "", nil, err
+	}
+	if err := mp.WriteField("to", strings.Join(m.Recipients, ",")); err != nil {
+		return "", nil, err
+	}
+	if err := mp.WriteField("subject", "Uptime Status Alert"); err != nil {
+		return "", nil, err
+	}
+	if err := mp.WriteField("text", msg); err != nil {
+		return "", nil, err
+	}
+	return mp.FormDataContentType(), body, nil
 }
