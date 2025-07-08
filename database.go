@@ -133,31 +133,39 @@ func purgeHistData(site, date string) error {
 	})
 }
 
+// getTime returns RFC3339 time for given timeframe.
+func getTime(frame TimeFrame) []byte {
+	var duration []byte
+	switch frame {
+	case hour:
+		duration = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
+	case day:
+		duration = []byte(time.Now().Add(-time.Hour * 24).Format(time.RFC3339))
+	case month:
+		duration = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
+	case year:
+		duration = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
+	case week:
+		duration = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
+	case all:
+		duration = []byte(time.Time{}.Format(time.RFC3339))
+	}
+	return duration
+}
+
 // getHistory returns array of status values from the given path for the given timeframe.
 func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 	stats := []Status{}
 	status := Status{}
-	max := []byte(time.Now().Format(time.RFC3339))  //nolint:predeclared
-	min := []byte(time.Time{}.Format(time.RFC3339)) //nolint:predeclared
-	switch frame {
-	case Hour:
-		min = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
-	case Day:
-		min = []byte(time.Now().Add(-time.Hour * 24).Format(time.RFC3339))
-	case Month:
-		min = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
-	case Year:
-		min = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
-	case Week:
-		min = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
-	}
+	end := []byte(time.Now().Format(time.RFC3339))
+	start := getTime(frame)
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket(path, tx)
 		if bucket == nil {
 			return errPath
 		}
 		c := bucket.Cursor()
-		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
+		for k, v := c.Seek(start); k != nil && bytes.Compare(k, end) <= 0; k, v = c.Next() {
 			if err := json.Unmarshal(v, &status); err != nil {
 				return err
 			}
@@ -172,15 +180,15 @@ func getHistory(path []string, frame TimeFrame) ([]Status, error) {
 func getHistoryDetails(monitor string, ok int) (Details, error) {
 	var details Details
 	var err error
-	details.Status, err = getHistory([]string{"history", monitor}, All)
+	details.Status, err = getHistory([]string{"history", monitor}, all)
 	if err != nil {
 		return details, err
 	}
-	details.Response24, details.Uptime24, err = getStats(monitor, Day, ok)
+	details.Response24, details.Uptime24, err = getStats(monitor, day, ok)
 	if err != nil {
 		return details, err
 	}
-	details.Response30, details.Uptime30, err = getStats(monitor, Month, ok)
+	details.Response30, details.Uptime30, err = getStats(monitor, month, ok)
 	return details, err
 }
 
@@ -188,21 +196,8 @@ func getStats(monitor string, timeFrame TimeFrame, ok int) (int, float64, error)
 	var good, total float64
 	var status Status
 	var responseTime int
-
-	first := []byte(time.Time{}.Format(time.RFC3339))
+	first := getTime(timeFrame)
 	now := []byte(time.Now().Format(time.RFC3339))
-	switch timeFrame {
-	case Hour:
-		first = []byte(time.Now().Add(-time.Hour).Format(time.RFC3339))
-	case Day:
-		first = []byte(time.Now().Add(-time.Hour * 24).Format(time.RFC3339))
-	case Month:
-		first = []byte(time.Now().Add(-time.Hour * 24 * 30).Format(time.RFC3339))
-	case Year:
-		first = []byte(time.Now().Add(-time.Hour * 24 * 365).Format(time.RFC3339))
-	case Week:
-		first = []byte(time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339))
-	}
 	if err := db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("history"))
 		history := bucket.Bucket([]byte(monitor))
@@ -233,7 +228,7 @@ func getMonitors() ([]Monitor, error) {
 	monitor := Monitor{}
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := getBucket([]string{"monitors"}, tx)
-		return bucket.ForEach(func(k, v []byte) error {
+		return bucket.ForEach(func(_, v []byte) error {
 			if err := json.Unmarshal(v, &monitor); err != nil {
 				return err
 			}
@@ -447,9 +442,9 @@ func removeNotify(name string) error {
 			return fmt.Errorf("delete bucket %s %w", name, err)
 		}
 		bucket = tx.Bucket([]byte("monitors"))
-		err := bucket.ForEach(func(k, v []byte) error {
+		err := bucket.ForEach(func(key, v []byte) error {
 			if err := json.Unmarshal(v, &monitor); err != nil {
-				return fmt.Errorf("unmarshal monitor %s %w", string(k), err)
+				return fmt.Errorf("unmarshal monitor %s %w", string(key), err)
 			}
 			monitor.Notifiers = slices.DeleteFunc(monitor.Notifiers, func(n string) bool {
 				return n == name
@@ -458,7 +453,7 @@ func removeNotify(name string) error {
 			if err != nil {
 				return fmt.Errorf("marshal monitor %s %w", monitor.Name, err)
 			}
-			return bucket.Put(k, bytes)
+			return bucket.Put(key, bytes)
 		})
 		return err
 	})
@@ -535,7 +530,7 @@ func getAllNotifications() []Notification {
 		if bucket == nil {
 			return berrors.ErrBucketNotFound
 		}
-		return bucket.ForEach(func(k, v []byte) error {
+		return bucket.ForEach(func(k, _ []byte) error {
 			notification.Name = string(k)
 			notifyBucket := bucket.Bucket(k)
 			if notifyBucket == nil {
@@ -571,7 +566,7 @@ func getAllMonitorsForDisplay() []MonitorDisplay {
 			Active: monitor.Active,
 		}
 		disp.Status, _ = getStatus(monitor.Name)
-		history, _ := getHistory([]string{"history", monitor.Name}, Day)
+		history, _ := getHistory([]string{"history", monitor.Name}, day)
 		var total, good float64
 		for i, hist := range history {
 			if i == 0 {

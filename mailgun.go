@@ -14,12 +14,13 @@ import (
 
 // MailGunNotifier holds data to send emails via MailGun.
 type MailGunNotifier struct {
-	Name       string
-	APIKey     string
-	Recipients []string
-	Domain     string
+	Name       string   `json:"name,omitempty"`
+	APIKey     string   `json:"api_key,omitempty"`
+	Recipients []string `json:"recipients,omitempty"`
+	Domain     string   `json:"domain,omitempty"`
 }
 
+// MailGunMessage represents an email to be sent to mailgun server.
 type MailGunMessage struct {
 	To      []string `json:"to,omitempty"`
 	Subject string   `json:"subject,omitempty"`
@@ -27,8 +28,9 @@ type MailGunMessage struct {
 	Text    string   `json:"text,omitempty"`
 }
 
+// SendNotification transmits a message to mailgun server.
 func (m *MailGunNotifier) SendNotification(ctx context.Context, msg string) error {
-	ct, body, err := m.Form(msg)
+	contentType, body, err := m.form(msg)
 	if err != nil {
 		return err
 	}
@@ -36,7 +38,7 @@ func (m *MailGunNotifier) SendNotification(ctx context.Context, msg string) erro
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", ct)
+	req.Header.Set("Content-Type", contentType)
 	req.SetBasicAuth("api", m.APIKey)
 	client := http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
@@ -72,31 +74,31 @@ func sendMailGunStatusNotification(ctx context.Context, notification []byte, sta
 			status.Site, status.URL, status.Status))
 }
 
-func sendMailGunCertExpiryNotification(ctx context.Context, notification []byte, s Status) error {
+func sendMailGunCertExpiryNotification(ctx context.Context, notification []byte, status Status) error {
 	var mailgun MailGunNotifier
 	if err := json.Unmarshal(notification, &mailgun); err != nil {
 		return err
 	}
 	return mailgun.SendNotification(ctx,
 		(fmt.Sprintf("Uptime Certificate Expiry Message\n%s %s\n Certificate will expire in %d days",
-			s.Site, s.URL, s.CertExpiry)))
+			status.Site, status.URL, status.CertExpiry)))
 }
 
-func (m *MailGunNotifier) Form(msg string) (string, io.Reader, error) {
+func (m *MailGunNotifier) form(msg string) (string, io.Reader, error) {
 	body := new(bytes.Buffer)
-	mp := multipart.NewWriter(body)
-	defer mp.Close()
-	if err := mp.WriteField("from", "uptime@"+m.Domain); err != nil {
+	writer := multipart.NewWriter(body)
+	defer writer.Close()
+	if err := writer.WriteField("from", "uptime@"+m.Domain); err != nil {
 		return "", nil, err
 	}
-	if err := mp.WriteField("to", strings.Join(m.Recipients, ",")); err != nil {
+	if err := writer.WriteField("to", strings.Join(m.Recipients, ",")); err != nil {
 		return "", nil, err
 	}
-	if err := mp.WriteField("subject", "Uptime Status Alert"); err != nil {
+	if err := writer.WriteField("subject", "Uptime Status Alert"); err != nil {
 		return "", nil, err
 	}
-	if err := mp.WriteField("text", msg); err != nil {
+	if err := writer.WriteField("text", msg); err != nil {
 		return "", nil, err
 	}
-	return mp.FormDataContentType(), body, nil
+	return writer.FormDataContentType(), body, nil
 }

@@ -31,7 +31,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	if err := layout("Uptime", []g.Node{
 		h.H2(g.Text("Uptime Status")),
 		h.Br(nil),
-		g.If(IsAdmin(r), linkButton("/monitor/new", "New Monitor")),
+		g.If(isAdmin(r), linkButton("/monitor/new", "New Monitor")),
 		linkButton("notifications/", "Notifications"),
 		linkButton("/logs", "View Logs"),
 		linkButton("/logout", "Logout"),
@@ -43,7 +43,7 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func logs(w http.ResponseWriter, r *http.Request) {
+func logs(w http.ResponseWriter, _ *http.Request) {
 	logs, err := os.ReadFile("uptime.log")
 	if err != nil {
 		log.Println("get logs", err)
@@ -84,7 +84,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func displayLogin(w http.ResponseWriter, r *http.Request) {
+func displayLogin(w http.ResponseWriter, _ *http.Request) {
 	if err := layout("Login", []g.Node{
 		h.Form(h.Class("center"),
 			h.Action("/login"),
@@ -259,7 +259,7 @@ func displayError(w http.ResponseWriter, err error) {
 	}
 }
 
-func newMonitor(w http.ResponseWriter, r *http.Request) {
+func newMonitor(w http.ResponseWriter, _ *http.Request) {
 	notifications := getAllNotifications()
 	notifyCheckboxes := make([]g.Node, 0, len(notifications)+1)
 	for _, n := range notifications {
@@ -503,6 +503,7 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	monitor.StatusOK = ok
 	// check notifications
 	for _, n := range notifications {
 		notification := r.FormValue(n.Name)
@@ -510,7 +511,6 @@ func updateMonitor(w http.ResponseWriter, r *http.Request) {
 			monitor.Notifiers = append(monitor.Notifiers, n.Name)
 		}
 	}
-	monitor.StatusOK = ok
 	if monitor.Type == PING {
 		displayError(w, errNotImplemented)
 		return
@@ -534,15 +534,15 @@ func history(w http.ResponseWriter, r *http.Request) {
 	var timeFrame TimeFrame
 	switch duration {
 	case "year":
-		timeFrame = Year
+		timeFrame = year
 	case "month":
-		timeFrame = Month
+		timeFrame = month
 	case "week":
-		timeFrame = Week
+		timeFrame = week
 	case "all":
-		timeFrame = All
+		timeFrame = all
 	default:
-		timeFrame = Day
+		timeFrame = day
 	}
 	history, err := getHistory([]string{"history", site}, timeFrame)
 	if err != nil {
@@ -560,7 +560,7 @@ func history(w http.ResponseWriter, r *http.Request) {
 			linkButton("/monitor/history/"+site+"/year", "year"),
 			linkButton("/monitor/history/"+site+"/all", "all time"),
 			linkButton("/", "Home"),
-			g.If(IsAdmin(r), h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
+			g.If(isAdmin(r), h.Button(h.Type("button"), h.Style("background:red"), g.Text("Purge Data"),
 				g.Attr("onclick", "document.getElementById('purge').showModal()"))),
 		),
 		g.If(history == nil, h.P(g.Text("No data for time period"))),
@@ -573,22 +573,22 @@ func history(w http.ResponseWriter, r *http.Request) {
 }
 
 func validateURL(s string) bool {
-	u, err := url.Parse(s)
+	url, err := url.Parse(s)
 	if err != nil {
 		return false
 	}
-	if u.Scheme != "http" && u.Scheme != "https" {
+	if url.Scheme != "http" && url.Scheme != "https" {
 		return false
 	}
-	if _, err := net.LookupIP(u.Host); err != nil {
+	if _, err := net.LookupIP(url.Host); err != nil {
 		return false
 	}
-	log.Println(err, u.Scheme, u.Host)
+	log.Println(err, url.Scheme, url.Host)
 	return true
 }
 
 func notifications(w http.ResponseWriter, r *http.Request) {
-	admin := IsAdmin(r)
+	admin := isAdmin(r)
 	notifications := getAllNotifications()
 	rows := []g.Node{}
 	for _, n := range notifications {
@@ -619,7 +619,7 @@ func notifications(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newNotification(w http.ResponseWriter, r *http.Request) {
+func newNotification(w http.ResponseWriter, _ *http.Request) {
 	if err := layoutExtra("New Notification", []g.Node{
 		h.H1(g.Text("New Notifications")),
 		h.Form(
@@ -757,14 +757,14 @@ func createNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 func displayEditnotification(w http.ResponseWriter, r *http.Request) {
-	notify := r.PathValue("notify")
-	notifyType, notification, err := getNotify(notify)
+	n := r.PathValue("notify")
+	notifyType, notification, err := getNotify(n)
 	if err != nil {
 		displayError(w, err)
 		return
 	}
-	var n Notification
-	if err := json.Unmarshal(notification, &n); err != nil {
+	var notify Notification
+	if err := json.Unmarshal(notification, &notify); err != nil {
 		displayError(w, err)
 		return
 	}
@@ -775,8 +775,8 @@ func displayEditnotification(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := layout("Edit Notification", []g.Node{
 		h.H1(g.Text("Edit Notification")),
-		h.H2(g.Text("Notifications Name: " + n.Name)),
-		h.Form(h.Method("post"), h.Action("/notifications/edit/"+n.Name),
+		h.H2(g.Text("Notifications Name: " + notify.Name)),
+		h.Form(h.Method("post"), h.Action("/notifications/edit/"+notify.Name),
 			table,
 			hidden,
 			linkButton("/notifications/", "Cancel"),
@@ -849,7 +849,7 @@ func testNotification(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func editSMSNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
+func editSMSNotification(w http.ResponseWriter, _ *http.Request) {
 	if err := layout("Edit Notification", []g.Node{
 		h.H2(g.Text("Not Implemented")),
 	}).Render(w); err != nil {
@@ -857,7 +857,7 @@ func editSMSNotification(w http.ResponseWriter, r *http.Request) { //nolint:unpa
 	}
 }
 
-func editEmailNotification(w http.ResponseWriter, r *http.Request) { //nolint:unparam
+func editEmailNotification(w http.ResponseWriter, _ *http.Request) {
 	if err := layout("Edit Notification", []g.Node{
 		h.H2(g.Text("Not Implemented")),
 	}).Render(w); err != nil {
@@ -914,7 +914,7 @@ func details(w http.ResponseWriter, r *http.Request) {
 		displayError(w, err)
 		return
 	}
-	history, err := getHistory([]string{"history", site}, All)
+	history, err := getHistory([]string{"history", site}, all)
 	if err != nil {
 		displayError(w, err)
 		return
@@ -935,7 +935,7 @@ func details(w http.ResponseWriter, r *http.Request) {
 		h.P(h.A(h.Href(monitor.URL), g.Text(monitor.URL))),
 		h.Div(
 			linkButton("/monitor/history/"+site+"/day", "History"),
-			g.If(IsAdmin(r),
+			g.If(isAdmin(r),
 				g.Group{
 					g.If(monitor.Active, linkButton("/monitor/pause/"+site, "Pause")),
 					g.If(!monitor.Active, linkButton("/monitor/resume/"+site, "Resume")),

@@ -25,26 +25,26 @@ func startMonitors(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func monitor(ctx context.Context, wg *sync.WaitGroup, m *Monitor) {
+func monitor(ctx context.Context, wg *sync.WaitGroup, monitor *Monitor) {
 	defer wg.Done()
-	frequency, err := time.ParseDuration(m.Freq)
+	frequency, err := time.ParseDuration(monitor.Freq)
 	if err != nil {
-		log.Printf("invalid frequency for monitor %s, %s, %v", m.Name, m.Freq, err)
+		log.Printf("invalid frequency for monitor %s, %s, %v", monitor.Name, monitor.Freq, err)
 		return
 	}
 	timer := time.NewTimer(time.Second)
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
-	log.Println("starting monitor", m.Name)
+	log.Println("starting monitor", monitor.Name)
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println(m.Name, "shutting down")
+			log.Println(monitor.Name, "shutting down")
 			return
 		case <-ticker.C:
-			m.updateStatus(ctx)
+			monitor.updateStatus(ctx)
 		case <-timer.C:
-			m.updateStatus(ctx)
+			monitor.updateStatus(ctx)
 		}
 	}
 }
@@ -86,14 +86,14 @@ func (m *Monitor) updateStatus(ctx context.Context) {
 }
 
 func (m *Monitor) checkHTTP(ctx context.Context) Status {
-	s := Status{
+	status := Status{
 		Site: m.Name,
 		URL:  m.URL,
 		Time: time.Now(),
 	}
 	if m.Type != HTTP {
-		s.Status = "wrong type for http check" + string(m.Type)
-		return s
+		status.Status = "wrong type for http check" + string(m.Type)
+		return status
 	}
 	timeout, err := time.ParseDuration(m.Timeout)
 	if err != nil {
@@ -104,26 +104,27 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 	defer cancel()
 	req, err := http.NewRequestWithContext(timeCtx, http.MethodGet, m.URL, nil)
 	if err != nil {
-		s.Status = err.Error()
-		return s
+		status.Status = err.Error()
+		return status
 	}
 	client := http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
-	s.ResponseTime = time.Since(s.Time)
+	status.ResponseTime = time.Since(status.Time)
 	if err != nil {
-		s.Status = err.Error()
-		return s
+		status.Status = err.Error()
+		return status
 	}
 	defer resp.Body.Close()
-	s.Status = resp.Status
-	s.StatusCode = resp.StatusCode
+	status.Status = resp.Status
+	status.StatusCode = resp.StatusCode
 	if len(resp.TLS.PeerCertificates) > 0 {
 		cert := resp.TLS.PeerCertificates[0]
-		s.CertExpiry = int(time.Until(cert.NotAfter).Hours() / 24)
+		status.CertExpiry = int(time.Until(cert.NotAfter).Hours() / 24)
 	}
-	return s
+	return status
 }
 
+// Check conducts a check for a monitor.
 func (m *Monitor) Check(ctx context.Context) Status {
 	switch m.Type {
 	case HTTP:
@@ -145,7 +146,7 @@ func (m *Monitor) sendStatusNotification(ctx context.Context, status Status) {
 		case Slack:
 			err = sendSlackStatusNotification(ctx, notification, status)
 		case Discord:
-			err = sendDiscordStatusNotification(ctx, notification, status)
+			err = sendDiscordStatusNotification(ctx, notification, status, m.StatusOK)
 		case MailGun:
 			err = sendMailGunStatusNotification(ctx, notification, status)
 		default:

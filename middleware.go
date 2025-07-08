@@ -20,6 +20,7 @@ func Logger(next http.Handler) http.Handler {
 
 type statusRecorder struct {
 	http.ResponseWriter
+
 	status int
 }
 
@@ -48,7 +49,7 @@ func auth(next http.Handler) http.Handler {
 }
 
 func sessionData(r *http.Request) (Session, error) {
-	s := Session{}
+	sess := Session{}
 	session, err := store.Get(r, "devilcove-uptime")
 	if err != nil {
 		log.Println("session err", err)
@@ -57,22 +58,22 @@ func sessionData(r *http.Request) (Session, error) {
 	user := session.Values["user"]
 	loggedIn := session.Values["logged in"]
 	admin := session.Values["admin"]
-	if x, ok := loggedIn.(bool); !ok || !x {
-		return Session{}, err
+	if x, ok := loggedIn.(bool); ok {
+		sess.LoggedIn = x
 	} else {
-		s.LoggedIn = x
+		return Session{}, err
 	}
 	if u, ok := user.(string); ok {
-		s.User = u
+		sess.User = u
 	}
 	if a, ok := admin.(bool); ok {
-		s.Admin = a
+		sess.Admin = a
 	}
-	s.Session = session
-	return s, nil
+	sess.Session = session
+	return sess, nil
 }
 
-func IsAdmin(r *http.Request) bool {
+func isAdmin(r *http.Request) bool {
 	session, err := sessionData(r)
 	if err != nil {
 		return false

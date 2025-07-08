@@ -9,23 +9,31 @@ linters:
     funlen:
       lines: -1
       statements: 50
+    exhaustive:
+      default-signifies-exhaustive: true
+    gosmopolitan:
+      allow-time-local: true
+    varnamelen:
+      max-distance: 10
+      min-name-length: 2
+      ignore-decls:
+        - wg *sync.WaitGroup
+        - w http.ResponseWriter
+        - r *http.Request
+        - tx *bbolt.Tx
   disable:
     - ireturn
     - err113
-    - exhaustive
     - tagliatelle
-    - fatcontext
     - mnd
-    - musttag
-    - revive
-    - gosmopolitan
-    - varnamelen
     - wrapcheck
     - gochecknoglobals
     - exhaustruct
     - depguard
+    - noinlineerr
     - nlreturn
     - wsl
+    - wsl_v5
   exclusions:
     generated: lax
     warn-unused: true

@@ -1,3 +1,4 @@
+// package to monitor uptime of servers
 package main
 
 import (
@@ -52,8 +53,9 @@ func main() {
 			log.Println("reset monitors")
 			cancelMonitors()
 			wgMonitors.Wait()
-			ctxMonitors, cancelMonitors = context.WithCancel(context.Background())
-			startMonitors(ctxMonitors, wgMonitors)
+			ctx, cancel := context.WithCancel(context.Background())
+			cancelMonitors = cancel
+			startMonitors(ctx, wgMonitors)
 		}
 	}
 }

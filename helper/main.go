@@ -18,10 +18,11 @@ import (
 	"golang.org/x/term"
 )
 
+// User represents a user of the system.
 type User struct {
-	Name  string
-	Pass  string
-	Admin bool
+	Name  string `json:"name,omitempty"`
+	Pass  string `json:"pass,omitempty"`
+	Admin bool   `json:"admin,omitempty"`
 }
 
 var (

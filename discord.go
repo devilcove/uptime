@@ -11,18 +11,20 @@ import (
 	"time"
 )
 
-// discord types.
+// DisordNotifier represents a nofifier for discord.
 type DisordNotifier struct {
-	Name string
-	URL  string
+	Name string `json:"name,omitempty"`
+	URL  string `json:"url,omitempty"`
 }
 
+// DiscordMessage represents the payload structure used to send messages to a Discord webhook.
 type DiscordMessage struct {
 	Content  string         `json:"content,omitempty"`
 	Username string         `json:"username,omitempty"`
 	Embeds   []DiscordEmbed `json:"embeds,omitempty"`
 }
 
+// DiscordEmbed represents embedded fields in DiscordMessage.
 type DiscordEmbed struct {
 	Title       string `json:"title,omitempty"`
 	Color       int    `json:"color,omitempty"`
@@ -30,6 +32,7 @@ type DiscordEmbed struct {
 	Description string `json:"description,omitempty"`
 }
 
+// Send dispatches a message to a discord webhook.
 func (d *DisordNotifier) Send(ctx context.Context, data DiscordMessage) error {
 	payload, err := json.Marshal(data)
 	if err != nil {
@@ -58,7 +61,7 @@ func (d *DisordNotifier) Send(ctx context.Context, data DiscordMessage) error {
 	return nil
 }
 
-func sendDiscordStatusNotification(ctx context.Context, notification []byte, status Status) error {
+func sendDiscordStatusNotification(ctx context.Context, notification []byte, status Status, ok int) error {
 	var discord DisordNotifier
 	if err := json.Unmarshal(notification, &discord); err != nil {
 		return err
@@ -69,7 +72,7 @@ func sendDiscordStatusNotification(ctx context.Context, notification []byte, sta
 		Embeds: []DiscordEmbed{
 			{
 				Title:       status.Site,
-				Color:       DiscordRed,
+				Color:       discordBlue,
 				URL:         status.URL,
 				Description: status.URL,
 			},
@@ -78,6 +81,9 @@ func sendDiscordStatusNotification(ctx context.Context, notification []byte, sta
 				Description: status.Status,
 			},
 		},
+	}
+	if status.StatusCode != ok {
+		data.Embeds[0].Color = discordRed
 	}
 	return discord.Send(ctx, data)
 }
@@ -93,7 +99,7 @@ func sendDiscordCertExpiryNotification(ctx context.Context, notification []byte,
 		Embeds: []DiscordEmbed{
 			{
 				Title:       status.Site,
-				Color:       DiscordRed,
+				Color:       discordRed,
 				URL:         status.URL,
 				Description: status.URL,
 			},
@@ -117,7 +123,7 @@ func sendDiscordTestNotification(ctx context.Context, notification []byte) error
 		Embeds: []DiscordEmbed{
 			{
 				Title:       "test message",
-				Color:       DiscordRed,
+				Color:       discordRed,
 				URL:         "https://example.com",
 				Description: "https://example.com",
 			},

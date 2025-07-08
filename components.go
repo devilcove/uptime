@@ -100,24 +100,24 @@ func statusTable() g.Node {
 		h.Th(g.Text("Actions")),
 	)
 	rows = append(rows, header)
-	for _, m := range monitors {
-		name := h.Button(g.Text(m.Name), h.Style("background:yellow;color:black;"), h.Title("Paused"))
-		if m.Active {
-			name = h.Button(g.Text(m.Name), h.Style("background:red"), h.Title("Down"))
-			if m.DisplayStatus {
-				name = h.Button(g.Text(m.Name), h.Style("background:green"), h.Title("Active"))
+	for _, monitor := range monitors {
+		name := h.Button(g.Text(monitor.Name), h.Style("background:yellow;color:black;"), h.Title("Paused"))
+		if monitor.Active {
+			name = h.Button(g.Text(monitor.Name), h.Style("background:red"), h.Title("Down"))
+			if monitor.DisplayStatus {
+				name = h.Button(g.Text(monitor.Name), h.Style("background:green"), h.Title("Active"))
 			}
 		}
 		row := h.Tr(
 			h.Td(name),
 			h.Td(h.Button(h.Style("background:"+"green"),
-				g.Text(strconv.FormatFloat(m.PerCent, 'f', 2, 64)+" %")),
+				g.Text(strconv.FormatFloat(monitor.PerCent, 'f', 2, 64)+" %")),
 				h.Title("last 24 hours"),
 			),
-			h.Td(g.Text(m.Status.Time.Format(time.RFC822))),
-			h.Td(g.Text(m.Status.ResponseTime.Round(time.Millisecond).String())),
-			h.Td(g.Text(strconv.Itoa(m.Status.CertExpiry))),
-			h.Td(linkButton("/monitor/details/"+m.Name, "Details")),
+			h.Td(g.Text(monitor.Status.Time.Format(time.RFC822))),
+			h.Td(g.Text(monitor.Status.ResponseTime.Round(time.Millisecond).String())),
+			h.Td(g.Text(strconv.Itoa(monitor.Status.CertExpiry))),
+			h.Td(linkButton("/monitor/details/"+monitor.Name, "Details")),
 		)
 		rows = append(rows, row)
 	}

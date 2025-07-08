@@ -12,8 +12,9 @@ type Middleware func(http.Handler) http.Handler
 
 // Router provides a chain of middlewares and routes.
 type Router struct {
-	chain http.Handler
 	*http.ServeMux
+
+	chain http.Handler
 }
 
 // DefaultRouter creates a new Router using the default ServeMux.
@@ -78,7 +79,7 @@ func (router *Router) Put(pattern string, handler http.HandlerFunc) {
 	router.HandleFunc("PUT\t"+pattern, handler)
 }
 
-// Delete registers the handler for patch requests on given pattern.
+// Patch registers the handler for patch requests on given pattern.
 func (router *Router) Patch(pattern string, handler http.HandlerFunc) {
 	router.HandleFunc("PATCH\t"+pattern, handler)
 }
