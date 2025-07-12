@@ -53,39 +53,39 @@ const (
 
 // User represents a user of the system.
 type User struct {
-	Name  string `json:"name,omitempty"`
-	Pass  string `json:"pass,omitempty"`
-	Admin bool   `json:"admin,omitempty"`
+	Name  string
+	Pass  string
+	Admin bool
 }
 
 // Status represents the current status of an endpoint monitor.
 type Status struct {
-	Site         string        `json:"site,omitempty"`
-	URL          string        `json:"url,omitempty"`
-	Time         time.Time     `json:"time,omitempty"`
-	StatusCode   int           `json:"status_code,omitempty"`
-	Status       string        `json:"status,omitempty"`
-	CertExpiry   int           `json:"cert_expiry,omitempty"`
-	ResponseTime time.Duration `json:"response_time,omitempty"`
+	Site         string
+	URL          string
+	Time         time.Time
+	StatusCode   int
+	Status       string
+	CertExpiry   int
+	ResponseTime time.Duration
 }
 
 // Monitor represents an endpoint monitor.
 type Monitor struct {
-	Type      MonitorType `json:"type,omitempty"`
-	URL       string      `json:"url,omitempty"`
-	Freq      string      `json:"freq,omitempty"`
-	Name      string      `json:"name,omitempty"`
-	Timeout   string      `json:"timeout,omitempty"`
-	StatusOK  int         `json:"status_ok,omitempty"`
-	Active    bool        `json:"active,omitempty"`
-	Notifiers []string    `json:"notifiers,omitempty"`
+	Type      MonitorType
+	URL       string
+	Freq      string
+	Name      string
+	Timeout   string
+	StatusOK  int
+	Active    bool
+	Notifiers []string
 }
 
 // Notification represents a notification.
 type Notification struct {
-	Name         string     `json:"name,omitempty"`
-	Type         NotifyType `json:"type,omitempty"`
-	Notification any        `json:"notification,omitempty"`
+	Name         string
+	Type         NotifyType
+	Notification any
 }
 
 // Session represents a user session.
