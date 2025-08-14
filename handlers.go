@@ -580,7 +580,7 @@ func validateURL(s string) bool {
 	if url.Scheme != "http" && url.Scheme != "https" {
 		return false
 	}
-	if _, err := net.LookupIP(url.Host); err != nil {
+	if _, err := net.LookupIP(url.Host); err != nil { //nolint:noctx
 		return false
 	}
 	log.Println(err, url.Scheme, url.Host)

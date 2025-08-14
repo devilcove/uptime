@@ -40,8 +40,8 @@ linters:
     generated: lax
     warn-unused: true
     presets:
-      - comments
-      - common-false-positives
+    #  - comments
+    #  - common-false-positives
       - legacy
       - std-error-handling
 formatters:
