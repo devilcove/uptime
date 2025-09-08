@@ -108,8 +108,16 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		return status
 	}
 	client := http.Client{Timeout: timeout}
-	resp, err := client.Do(req)
-	status.ResponseTime = time.Since(status.Time)
+	var resp *http.Response
+	// check a couple of times, eliminate transitory errors.
+	for range 3 {
+		resp, err = client.Do(req)
+		status.ResponseTime = time.Since(status.Time)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
 	if err != nil {
 		status.Status = err.Error()
 		return status
