@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -306,3 +307,66 @@ func notificationForm(kind NotifyType, notification []byte) (g.Node, g.Node, err
 		return nil, nil, errors.New("invalid notification type")
 	}
 }
+
+func aboutDialog() g.Node {
+	return h.Dialog(
+		h.Style("background-color: #4a4a4a; color: white"),
+		g.Attr("id", "about"),
+		h.H2(g.Text("Uptime")),
+		h.P(g.Text("Version v0.1.3")),
+		h.H3(g.Text("© 2025 Matthew R Kasun")),
+		h.P(
+			h.A(
+				h.Href("mailto://mkasun@nusak.ca?subject=uptime"),
+				envelopeSVG(),
+				g.Text(" mkasun@nusak.ca"),
+			),
+		),
+		h.P(
+			h.A(
+				h.Href("https://github.com/devilcove/uptime"),
+				svg(),
+				g.Text(" repo"),
+			),
+		),
+		h.Button(
+			g.Attr("type", "button"),
+			g.Attr("onclick", "document.getElementById('about').close()"),
+			g.Text("Close"),
+		),
+	)
+}
+
+func svg() g.Node {
+	svg := h.SVG(
+		// g.Attr("xmlns", "http://www.w3.org/2000/svg"),
+		g.Attr("width", "25"),
+		g.Attr("height", "24"),
+		g.Attr("viewbox", "0 0 100 100"),
+		g.Attr("fill", "currentColor"),
+		g.El("path",
+			g.Attr("fill-rule", "evenodd"),
+			g.Attr("d", "M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"),
+			g.Attr("clip-rule", "evenodd"),
+		),
+	)
+	svg.Render(os.Stdout)
+	return svg
+}
+
+func envelopeSVG() g.Node {
+	svg := h.SVG(
+		g.Attr("width", "25"),
+		g.Attr("height", "25"),
+		g.Attr("viewbox", "0 -150 640 640"),
+		g.Attr("fill", "currentColor"),
+		g.El("path",
+			g.Attr("d", "M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z"),
+		),
+	)
+	svg.Render(os.Stdout)
+	return svg
+}
+
+//<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d='M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z'/></svg>
+//}

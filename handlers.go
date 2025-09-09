@@ -36,8 +36,14 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 		linkButton("/logs", "View Logs"),
 		linkButton("/logout", "Logout"),
 		linkButton("/user/", "User Admin"),
+		h.Button(
+			g.Attr("type", "button"),
+			g.Attr("onclick", "document.getElementById('about').showModal()"),
+			g.Text("About"),
+		),
 		h.Br(nil),
 		statusTable(),
+		aboutDialog(),
 	}).Render(w); err != nil {
 		log.Println("render main page", err)
 	}
