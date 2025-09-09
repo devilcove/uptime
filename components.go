@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -182,6 +181,7 @@ func compactHistoryTable(history []Status, statusOK int) g.Node {
 
 func newUserDialog() g.Node {
 	return h.Dialog(
+		h.Style("background-color: #4a4a4a; color: white"),
 		g.Attr("id", "new"),
 		h.H2(g.Text("New User")),
 		h.Form(
@@ -224,6 +224,7 @@ func newUserDialog() g.Node {
 
 func histPurgeDialog(site, value string) g.Node {
 	return h.Dialog(
+		h.Style("background-color: #4a4a4a; color: white"),
 		g.Attr("id", "purge"),
 		h.H2(g.Text("Purge Records")),
 		h.Form(
@@ -325,7 +326,7 @@ func aboutDialog() g.Node {
 		h.P(
 			h.A(
 				h.Href("https://github.com/devilcove/uptime"),
-				svg(),
+				githubSVG(),
 				g.Text(" repo"),
 			),
 		),
@@ -337,9 +338,8 @@ func aboutDialog() g.Node {
 	)
 }
 
-func svg() g.Node {
-	svg := h.SVG(
-		// g.Attr("xmlns", "http://www.w3.org/2000/svg"),
+func githubSVG() g.Node {
+	return h.SVG(
 		g.Attr("width", "25"),
 		g.Attr("height", "24"),
 		g.Attr("viewbox", "0 0 100 100"),
@@ -350,12 +350,10 @@ func svg() g.Node {
 			g.Attr("clip-rule", "evenodd"),
 		),
 	)
-	svg.Render(os.Stdout)
-	return svg
 }
 
 func envelopeSVG() g.Node {
-	svg := h.SVG(
+	return h.SVG(
 		g.Attr("width", "25"),
 		g.Attr("height", "25"),
 		g.Attr("viewbox", "0 -150 640 640"),
@@ -364,9 +362,4 @@ func envelopeSVG() g.Node {
 			g.Attr("d", "M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z"),
 		),
 	)
-	svg.Render(os.Stdout)
-	return svg
 }
-
-//<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d='M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z'/></svg>
-//}
