@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/gorilla/sessions v1.4.0
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/term v0.37.0
 	maragu.dev/gomponents v1.2.0
 )
