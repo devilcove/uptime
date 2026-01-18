@@ -486,6 +486,7 @@ func deleteMonitor(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	reset <- syscall.SIGHUP
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -107,11 +109,11 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		status.Status = err.Error()
 		return status
 	}
-	client := http.Client{Timeout: timeout}
+	// client := http.Client{Timeout: timeout}
 	var resp *http.Response
 	// check a couple of times, eliminate transitory errors.
 	for range 3 {
-		resp, err = client.Do(req)
+		resp, err = http.DefaultClient.Do(req)
 		status.ResponseTime = time.Since(status.Time)
 		if err == nil {
 			break
@@ -119,7 +121,12 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		time.Sleep(time.Second)
 	}
 	if err != nil {
+		var urlError *url.Error
 		status.Status = err.Error()
+		// if urlError, ok := err.(*url.Error); ok {
+		if errors.As(err, &urlError) {
+			status.Status = urlError.Unwrap().Error() + " " + timeout.String()
+		}
 		return status
 	}
 	defer resp.Body.Close()

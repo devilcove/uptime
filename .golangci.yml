@@ -4,8 +4,6 @@ run:
 linters:
   default: all
   settings:
-    cyclop:
-      max-complexity: 12
     funlen:
       lines: -1
       statements: 50
@@ -34,6 +32,7 @@ linters:
     - depguard
     - noinlineerr
     - nlreturn
+    - prealloc
     - wsl
     - wsl_v5
   exclusions:
