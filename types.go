@@ -11,7 +11,6 @@ const (
 	httpAddr    = ":8090"
 	discordRed  = 14177041
 	discordBlue = 1127128
-	centerStyle = "text-align:center; margin-left:auto; margin-right:auto;"
 )
 
 // Generic types.

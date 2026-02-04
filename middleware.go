@@ -36,7 +36,8 @@ func (rec *statusRecorder) WriteHeader(code int) {
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := cookie.Get(r, cookieName); err != nil {
-			http.Redirect(w, r, "/login", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			displayLogin(w, r)
 			return
 		}
 		next.ServeHTTP(w, r)
