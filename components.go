@@ -1,9 +1,12 @@
 package main
 
 import (
+	"debug/buildinfo"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -310,11 +313,15 @@ func notificationForm(kind NotifyType, notification []byte) (g.Node, g.Node, err
 }
 
 func aboutDialog() g.Node {
+	bi, err := buildinfo.ReadFile(os.Args[0])
+	if err != nil {
+		log.Println("could not read buildinfo", os.Args[0], err)
+	}
 	return h.Dialog(
 		h.Style("background-color: #4a4a4a; color: white"),
 		g.Attr("id", "about"),
 		h.H2(g.Text("Uptime")),
-		h.P(g.Text("Version v0.1.3")),
+		h.P(g.Text("Version "+bi.Main.Version)),
 		h.H3(g.Text("© 2025 Matthew R Kasun")),
 		h.P(
 			h.A(
