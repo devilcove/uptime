@@ -3,12 +3,11 @@ package main
 import (
 	"errors"
 	"time"
-
-	"github.com/gorilla/sessions"
 )
 
 const (
 	cookieName  = "devilcove-uptime"
+	cookieAge   = 300
 	httpAddr    = ":8090"
 	discordRed  = 14177041
 	discordBlue = 1127128
@@ -58,6 +57,12 @@ type User struct {
 	Admin bool
 }
 
+// SessionUser represents a logged in user.
+type SessionUser struct {
+	Name  string
+	Admin bool
+}
+
 // Status represents the current status of an endpoint monitor.
 type Status struct {
 	Site         string
@@ -86,14 +91,6 @@ type Notification struct {
 	Name         string
 	Type         NotifyType
 	Notification any
-}
-
-// Session represents a user session.
-type Session struct {
-	User     string
-	LoggedIn bool
-	Admin    bool
-	Session  *sessions.Session
 }
 
 // Radio represents a UI radiobutton.

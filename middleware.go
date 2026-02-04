@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/devilcove/cookie"
 )
 
 // Logger is a logging middleware that logs useragent, RemoteAddr, Method, Host, Path and response.Status to stdlib log.
@@ -32,51 +35,28 @@ func (rec *statusRecorder) WriteHeader(code int) {
 
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := sessionData(r)
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
+		if _, err := cookie.Get(r, cookieName); err != nil {
+			http.Redirect(w, r, "/login", http.StatusUnauthorized)
 			return
-		}
-		if !session.LoggedIn {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-		if err := session.Session.Save(r, w); err != nil {
-			log.Println("save session", err)
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-func sessionData(r *http.Request) (Session, error) {
-	sess := Session{}
-	session, err := store.Get(r, "devilcove-uptime")
+func sessionUser(r *http.Request) (User, error) {
+	user := User{}
+	data, err := cookie.Get(r, cookieName)
 	if err != nil {
-		log.Println("session err", err)
-		return Session{}, err
+		return user, err
 	}
-	user := session.Values["user"]
-	loggedIn := session.Values["logged in"]
-	admin := session.Values["admin"]
-	if x, ok := loggedIn.(bool); ok {
-		sess.LoggedIn = x
-	} else {
-		return Session{}, err
-	}
-	if u, ok := user.(string); ok {
-		sess.User = u
-	}
-	if a, ok := admin.(bool); ok {
-		sess.Admin = a
-	}
-	sess.Session = session
-	return sess, nil
+	err = json.Unmarshal(data, &user)
+	return user, err
 }
 
 func isAdmin(r *http.Request) bool {
-	session, err := sessionData(r)
+	user, err := sessionUser(r)
 	if err != nil {
 		return false
 	}
-	return session.Admin
+	return user.Admin
 }

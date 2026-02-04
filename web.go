@@ -2,28 +2,19 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/gorilla/sessions"
+	"github.com/devilcove/cookie"
 )
-
-const (
-	sessionBytes = 32
-	cookieAge    = 300
-)
-
-var store *sessions.CookieStore //nolint:gochecknoglobals
 
 func web(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	store = sessions.NewCookieStore(randBytes(sessionBytes))
-	store.MaxAge(cookieAge)
-	store.Options.HttpOnly = true
-	store.Options.SameSite = http.SameSiteStrictMode
+	if err := cookie.New(cookieName, cookieAge); err != nil {
+		log.Println("new cookie", err)
+	}
 	log.Println("starting web server")
 
 	router := NewRouter(Logger)
@@ -79,13 +70,4 @@ func web(ctx context.Context, wg *sync.WaitGroup) {
 	if err := server.Shutdown(context.Background()); err != nil { //nolint:contextcheck
 		log.Println("web server shutdown", err)
 	}
-}
-
-func randBytes(l int) []byte {
-	bytes := make([]byte, l)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
 }

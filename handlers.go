@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/devilcove/cookie"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -70,16 +71,9 @@ func logs(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, cookieName)
-	if err != nil {
-		log.Println("session error", err)
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-		return
-	}
-	store.MaxAge(-1)
-	if err := session.Save(r, w); err != nil {
-		log.Println("session save", err)
+func logout(w http.ResponseWriter, _ *http.Request) {
+	if err := cookie.Clear(w, cookieName, false); err != nil {
+		log.Println("clear cookie", err)
 	}
 	if err := layout("Logout", []g.Node{
 		h.H2(g.Text("Goodbye")),
@@ -107,11 +101,6 @@ func displayLogin(w http.ResponseWriter, _ *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		log.Println("parse form", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	user := User{
 		Name: r.FormValue("name"),
 		Pass: r.FormValue("pass"),
@@ -121,31 +110,35 @@ func login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthozied", http.StatusUnauthorized)
 		return
 	}
-	store.MaxAge(300)
-	session, err := store.Get(r, "devilcove-uptime")
+	sessionUser := SessionUser{
+		Name:  user.Name,
+		Admin: checkAdmin(user.Name),
+	}
+	data, err := json.Marshal(sessionUser)
 	if err != nil {
-		log.Println("session err", err)
+		log.Println("marshal error", err)
+		http.Error(w, "unable to set cookie", http.StatusInternalServerError)
+		return
 	}
-	session.Values["logged in"] = true
-	session.Values["user"] = user.Name
-	session.Values["admin"] = checkAdmin(user.Name)
-	if err := session.Save(r, w); err != nil {
-		log.Println("session save", err)
+	if err := cookie.Save(w, cookieName, data); err != nil {
+		log.Println("marshal error", err)
+		http.Error(w, "unable to set cookie", http.StatusInternalServerError)
+		return
 	}
-	log.Println("user", user.Name, "logged in")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func admin(w http.ResponseWriter, r *http.Request) {
 	var logins []User
-	data, err := sessionData(r)
+
+	data, err := sessionUser(r)
 	if err != nil {
 		return
 	}
 	if data.Admin {
 		logins = getUsers()
 	} else {
-		logins = append(logins, getUser(data.User))
+		logins = append(logins, getUser(data.Name))
 	}
 	if err := layout("Admin", []g.Node{
 		container(true,
