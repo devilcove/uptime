@@ -46,7 +46,8 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, monitor *Monitor) {
 		case <-ticker.C:
 			monitor.updateStatus(ctx)
 		case <-timer.C:
-			monitor.updateStatus(ctx)
+			log.Println(monitor.Name, "skipping inital check on oracle")
+			//monitor.updateStatus(ctx)
 		}
 	}
 }
