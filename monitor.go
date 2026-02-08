@@ -102,7 +102,7 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		log.Println("Defaulting to 60 second timeout; configured was", m.Timeout)
 		timeout = time.Second * 60
 	}
-	req, err := http.NewRequest(http.MethodGet, m.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.URL, nil)
 	if err != nil {
 		status.Status = err.Error()
 		return status
@@ -117,6 +117,7 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		if err == nil {
 			break
 		}
+		log.Println("transitory fail for", req.URL, err)
 		time.Sleep(time.Second)
 	}
 	if err != nil {
