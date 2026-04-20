@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -88,6 +89,10 @@ func (m *Monitor) updateStatus(ctx context.Context) {
 }
 
 func (m *Monitor) checkHTTP(ctx context.Context) Status {
+	var version string
+	if info, ok := debug.ReadBuildInfo(); ok {
+		version = info.Main.Version
+	}
 	status := Status{
 		Site: m.Name,
 		URL:  m.URL,
@@ -107,6 +112,7 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		status.Status = err.Error()
 		return status
 	}
+	req.Header.Set("User-Agent", "Devilcove/Uptime ("+version+")")
 	client := http.Client{Timeout: timeout}
 	// client := http.Client{Timeout: timeout}
 	var resp *http.Response
