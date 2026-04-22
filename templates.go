@@ -16,7 +16,6 @@ func layout(title string, nodes []gomponents.Node) gomponents.Node {
 			html.Script(gomponents.Text("function goTo(loc) { location.href=loc }")),
 		},
 		Body: []gomponents.Node{
-			html.Style("background-color: #cecece;"),
 			container(true, nodes...),
 		},
 	})
