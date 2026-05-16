@@ -34,7 +34,8 @@ func (m *MailGunNotifier) SendNotification(ctx context.Context, msg string) erro
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		"https://api.mailgun.net/v3/"+m.Domain+"/messages", body)
 	if err != nil {
 		return err
 	}
