@@ -15,6 +15,7 @@ linters:
         - G120
         - G704
         - G706
+        - G710
     gosmopolitan:
       allow-time-local: true
     varnamelen:
@@ -34,6 +35,8 @@ linters:
     - mnd
     - wrapcheck
     - gochecknoglobals
+    - goconst
+    - gomodguard
     - exhaustruct
     - depguard
     - noinlineerr
@@ -51,9 +54,10 @@ linters:
       - std-error-handling
 formatters:
   enable:
-    - gci
-    - gofmt
     - gofumpt
-    - goimports
+    - golines
+  settings:
+    golines:
+      max-len: 120
   exclusions:
     generated: lax
