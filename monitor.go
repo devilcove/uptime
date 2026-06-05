@@ -53,14 +53,12 @@ func monitor(ctx context.Context, wg *sync.WaitGroup, monitor *Monitor) {
 }
 
 func (m *Monitor) updateStatus(ctx context.Context) {
-	var same bool
 	newStatus := m.Check(ctx)
 	oldStatus, err := getStatus(m.Name)
 	if err != nil {
 		log.Println("get old Status", m.Name, err)
 	}
 	if newStatus.Status == oldStatus.Status {
-		same = true
 		if newStatus.Time.Sub(oldStatus.Time) < time.Hour {
 			log.Println("no change in last hour ... skipping", m.Name)
 			return
@@ -69,7 +67,8 @@ func (m *Monitor) updateStatus(ctx context.Context) {
 		log.Println("status change", m.Name, "monitor status", oldStatus.Status, "checked status", newStatus.Status)
 		m.sendStatusNotification(ctx, newStatus)
 	}
-	if newStatus.CertExpiry < 10 && same {
+	// only check cert expiry if site reachable
+	if newStatus.CertExpiry < 10 && newStatus.StatusCode == m.StatusOK {
 		m.sendCertExpiryNotification(ctx, newStatus)
 	}
 	bytes, err := json.Marshal(&newStatus)
