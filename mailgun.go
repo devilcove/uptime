@@ -81,8 +81,8 @@ func sendMailGunCertExpiryNotification(ctx context.Context, notification []byte,
 		return err
 	}
 	return mailgun.SendNotification(ctx,
-		(fmt.Sprintf("Uptime Certificate Expiry Message\n%s %s\n Certificate will expire in %d days",
-			status.Site, status.URL, status.CertExpiry)))
+		fmt.Sprintf("Uptime Certificate Expiry Message\n%s %s\n Certificate will expire in %d days",
+			status.Site, status.URL, status.CertExpiry))
 }
 
 func (m *MailGunNotifier) form(msg string) (string, io.Reader, error) {
