@@ -126,10 +126,9 @@ func (m *Monitor) checkHTTP(ctx context.Context) Status {
 		time.Sleep(time.Second)
 	}
 	if err != nil {
-		var urlError *url.Error
 		status.Status = err.Error()
 		// if urlError, ok := err.(*url.Error); ok {
-		if errors.As(err, &urlError) {
+		if urlError, ok := errors.AsType[*url.Error](err); ok {
 			status.Status = urlError.Unwrap().Error() + " " + timeout.String()
 		}
 		return status
